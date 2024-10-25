@@ -30,7 +30,7 @@ f = [mu+2*sqrt(s2); flipdim(mu-2*sqrt(s2),1)];
 figure;
 hold on
 fill([xs; flipdim(xs,1)], f, [7 7 7]/8, DisplayName='95% Prediction Error Bars')
-plot(xs, mu, DisplayName='Preiction Mean'); 
+plot(xs, mu, DisplayName='Prediction Mean'); 
 scatter(x, y, '+', DisplayName='Data');
 xlabel('Input - x')
 ylabel('Output - y')

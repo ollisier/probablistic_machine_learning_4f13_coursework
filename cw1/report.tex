@@ -6,6 +6,7 @@
 \usepackage[a4paper, total={6in, 9in}]{geometry}
 \usepackage{titling}
 \usepackage{listings}
+\usepackage{subfig}
 
 \graphicspath{{figures/}}
 \title{\vspace{-2cm}4F13 Coursework 1 - Gaussian Processes}
@@ -27,7 +28,7 @@ hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik,
                    meanfunc, covfunc, likfunc, x, y);
 [mu, s2] = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y, xs);
 \end{lstlisting}
-
+\label{lst:A}
 
 Our model has a GP with squared exponential (SE) covariance function and zero mean along with a gaussian noise. The SE covariance function has two hyper-parameters, $\lambda$ which controls the characteristic length scale of the process and $\sigma_f^2$ which controls the variance in the output value of the GP. The gaussian noise has one hyper-parameter, $\sigma_n^2$, the variance of our measurement noise. 
 \[y = f(x) + \eta : \eta \sim \mathcal{N}(0, \sigma_n^2)\]
@@ -80,6 +81,7 @@ for i = 1:numel(ell)
 end
 minima = islocalmin2(nlZ);
 \end{lstlisting}
+\label{lst:B}
 
 \begin{figure}[h]
     \centering
@@ -108,6 +110,50 @@ minima = islocalmin2(nlZ);
     \caption{Prediction intervals of GP with hyper-parameters from Table \ref{table:B_hyper_parameter_optima}. Top: Optimum 1, Bottom: Optimum 2}
     \label{fig:B_hyper_parameter_optimum_comparison}
 \end{figure}
+
+\section{Task C}
+\begin{lstlisting}[caption=Code to use periodic SE covariance. Training and prediction code same as Listing \ref{lst:A}, captionpos=b, basicstyle=\small]
+covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
+\end{lstlisting}
+\label{lst:C}
+
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        $\lambda$ & p & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
+        \hline
+        $0.7048$ & $0.9991$ & $0.6941$ & $0.0851$ & $\num{2.9300e+01}$ \\ 
+        \hline
+    \end{tabular}
+    \caption{Hyper-parameter values for periodic SE covariance function}
+    \label{table:C_periodic_covariance_hyper_parameters}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{C/periodic_covariance_plot}
+    \caption{Prediction intervals for periodic SE covariance function with hyper parameters given in Table \ref{table:C_periodic_covariance_hyper_parameters}}
+    \label{fig:B_periodic_covariance_prediction_intervals}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{C/noise_cdf} % Replace with your figure file
+    \end{minipage}%
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{C/noise_plot} % Replace with your figure file
+    \end{minipage}
+    \caption{Caption for figure 2}
+    \label{fig:C_noise_distribution}
+\end{figure}
+
+\section{Task D}
+
 
 
 \end{document}
