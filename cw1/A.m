@@ -3,23 +3,37 @@ close all
 
 load("cw1/data/cw1a.mat")
 
-meanfunc = []; hyp.mean = [];
-covfunc = @covSEiso; hyp.cov = [-1 0];
-likfunc = @likGauss; hyp.lik = 0;
-
-hyp2 = minimize(hyp, @gp, -100, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
-
-disp(hyp2)
-
-
 xs = linspace(-3, 3, 1001)';
 
-[mu, s2] = gp(hyp2, @infGaussLik, meanfunc, covfunc, likfunc, x, y, xs);
+% Main Code
+meanfunc = []; hyp_init.mean = [];
+covfunc = @covSEiso; hyp_init.cov = [-1 0];
+likfunc = @likGauss; hyp_init.lik = 0;
+hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
+[mu, s2] = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y, xs);
 
+% Display outputs
+Z_init = gp(hyp_init, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
+Z_opt = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
+
+fprintf('Initial hyper-paramters:\n')
+disp(structfun(@exp, hyp_init, UniformOutput=false))
+fprintf('Initial log marginal likelihood: %f\n', -Z_init)
+
+fprintf('Optimised hyper-paramters:\n')
+disp(structfun(@exp, hyp_opt, UniformOutput=false))
+fprintf('Optimised log marginal likelihood: %f\n', -Z_opt)
+
+% Plot predictive distribution
 f = [mu+2*sqrt(s2); flipdim(mu-2*sqrt(s2),1)];
 
-figure(1)
+figure;
 hold on
-fill([xs; flipdim(xs,1)], f, [7 7 7]/8)
-plot(xs, mu); 
-scatter(x, y, '+');
+fill([xs; flipdim(xs,1)], f, [7 7 7]/8, DisplayName='95% Error Bars')
+plot(xs, mu, DisplayName='Mean'); 
+scatter(x, y, '+', DisplayName='Fitted Data');
+xlabel('x')
+ylabel('y')
+legend
+
+saveas(gcf,'figures/A/initial_fit_plot','epsc')

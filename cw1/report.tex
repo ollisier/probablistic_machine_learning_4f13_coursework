@@ -1,0 +1,76 @@
+\documentclass[11pt]{article}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage[a4paper, total={6in, 9in}]{geometry}
+\usepackage{titling}
+\usepackage{listings}
+
+\graphicspath{{figures/}}
+\title{\vspace{-2cm}4F13 Coursework 1 - Gaussian Processes}
+\preauthor{}
+\author{}
+\postauthor{}
+\date{October 2024}
+
+\begin{document}
+
+\maketitle
+\section{Task A}
+
+\begin{lstlisting}[caption=Code to train hyper-parameters and generate the predictive distribution of a GP with squared exponential covariance, captionpos=b, basicstyle=\small]
+meanfunc = []; hyp_init.mean = [];
+covfunc = @covSEiso; hyp_init.cov = [-1 0];
+likfunc = @likGauss; hyp_init.lik = 0;
+hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik, 
+                   meanfunc, covfunc, likfunc, x, y);
+[mu, s2] = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y, xs);
+\end{lstlisting}
+
+
+Our model has a GP with squared exponential (SE) covariance function and zero mean along with a gaussian noise. The SE covariance function has two hyper-parameters, $\lambda$ which controls the characteristic length scale of the process and $\sigma_f^2$ which controls the variance in the output value of the GP. The gaussian noise has one hyper-parameter, $\sigma_n^2$, the variance of our measurement noise. 
+\[y = f(x) + \eta : \eta \sim \mathcal{N}(0, \sigma_n^2)\]
+\[f = \mathcal{N}(0, k(x, x'))\]
+\[k(x,x') = \sigma_f^2 \exp(-\frac{(x-x')^2}{2\lambda^2})\]
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+         & $\lambda$ & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
+        \hline
+        Initial & $0.3679$ & $1$ & $1$ & $\num{-9.2910e+01}$ \\ 
+        Optimised & $0.1282$ & $0.8970$ & $0.1178$ & $\num{-1.1899e+01}$ \\ 
+        \hline
+    \end{tabular}
+    \caption{Initial and optimum hyper-parameter values when maximising log marginal likelihood of data}
+    \label{table:A_hyper_parameters}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{A/initial_fit_plot}
+    \caption{Mean and 95\% prediction interval of GP with squared exponential covariance function, optimised hyper-parameters used given in Table \ref{table:A_hyper_parameters}}
+    \label{fig:A}
+\end{figure}
+
+When we train our model hyper parameters to maximise log marginal likelihood we achieve the optimum values shown in Table \ref{table:A_hyper_parameters}. The covariance length scale, $\lambda$ is similar to the length scale of the undulations in our data. The $\sigma_f$ is much larger than $\sigma_n$ this makes sense as most of the variation in our data can be explained by our GP instead of the measurement noise.
+
+We plot the mean and 95\% error bars of the predictive distribution (Equ.\ref{equation:A_predictive_distribution}) in Fig \ref{fig:A}. We can see that the predictive error bars are smaller where we have data and return to the prior variance ($k(x, x) = \sigma_f^2$) plus $\sigma_n^2$ when there is no nearby data. This is clear from the form of the predictive distribution covariance, the first term is the prior covariance, the second is the noise variance and the third reduces the variance based on the distance between the sample point and our data.
+
+\begin{equation}
+    \begin{gathered}
+        y_* \sim \mathcal{N}(m_{|\textbf{y}}(x_*), k_{|\textbf{y}}(x_*, x_*)) \\
+        m_{|\textbf{y}}(x) = m(x) + k(x, \textbf{x})[k(\textbf{x}, \textbf{x}) + \sigma_n^2 I]^{-1} (\textbf{y} - m(\textbf{x})) \\
+        k_{|\textbf{y}}(x, x') = k(x, x') + \sigma_n^2 - k(x, \textbf{x})[k(\textbf{x}, \textbf{x}) + \sigma_n^2 I]^{-1} k(\textbf{x}, x')
+    \end{gathered}
+    \label{equation:A_predictive_distribution}
+\end{equation}
+
+\section{Task B}
+
+
+
+
+\end{document}

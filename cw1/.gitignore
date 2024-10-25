@@ -1,3 +1,5 @@
 gpml-matlab-master/
 data/
 *.asv
+*.synctex.gz
+figures
