@@ -8,6 +8,7 @@
 \usepackage{listings}
 \usepackage{subfig}
 
+
 \graphicspath{{figures/}}
 \title{\vspace{-2cm}4F13 Coursework 1 - Gaussian Processes}
 \preauthor{}
@@ -16,7 +17,6 @@
 \date{October 2024}
 
 \begin{document}
-
 \maketitle
 \section{Task A}
 
@@ -154,13 +154,15 @@ covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
 
 \section{Task D}
 
-\begin{lstlisting}[caption=Code sample a GP with covariance defined by the product of a periodic SE kernel and a SE kernel, captionpos=b, basicstyle=\small]
+\begin{lstlisting}[caption=Code to sample a GP with covariance defined by the product of a periodic SE kernel and a SE kernel, captionpos=b, basicstyle=\small]
 N_points = 200; N_samples = 3;
 x = linspace(-5,5,N_points)';
 cov_func = {@covProd, {@covPeriodic, @covSEiso}}; hyp.cov = [-0.5 0 0 2 0];
 K = feval(cov_func{:}, hyp.cov, x);
 y = chol(K + 1e-6*eye(N_points))' * gpml_randn(2, N_points, N_samples);
 \end{lstlisting}
+\label{lst:2D}
+
 
 \begin{table}[h]
     \centering
@@ -182,4 +184,48 @@ y = chol(K + 1e-6*eye(N_points))' * gpml_randn(2, N_points, N_samples);
     \label{fig:D_prod_kernel_samples}
 \end{figure}
 
+\section(Task E)
+
+\begin{lstlisting}[caption=Code to train and calculate prediction intervals of a 2D GP with SE ARD kernel, captionpos=b, basicstyle=\small]
+[xs1, xs2] = meshgrid(linspace(-10, 10, 101), linspace(-10, 10, 101));
+xs = [reshape(xs1, [], 1), reshape(xs2, [], 1)];
+mean_func = []; hyp_init.mean = [];
+cov_func = {@covSum, {@covSEard, @covSEard}}; hyp_init.cov = 0.1*randn(6,1);
+lik_func = @likGauss; hyp_init.lik = 0;
+hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik, 
+                   mean_func, cov_func, lik_func, x, y);
+[mu, s2] = gp(hyp_opt, @infGaussLik, mean_func, 
+              cov_func, lik_func, x, y, xs);
+\end{lstlisting}
+\label{lst:E}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{E/raw_data}
+    \caption{Visualisation of data in 'cw1e.mat'}
+    \label{fig:E_data_vis}
+\end{figure}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+        \hline
+         & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_n$ & $\ln(Z_{|\textbf{y}})$ \\
+        \hline
+        $covSEard$ & $1.107$ & $1.511$ & $1.285$ & - & - & - & $0.1026$ & $\num{1.9218e+01}$ \\ 
+        $covSEard + covSEard$ & $0.7116$ & $1104$ & $0.9864$ & $1.108$ & $1.446$ & $1281$ & $0.0979$ & $\num{6.6394e+01}$ \\
+        \hline
+    \end{tabular}
+    \caption{Hyper-parameter values for periodic SE covariance function}
+    \label{table:E_hyper_parameters}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{E/kernel_comparison}
+    \caption{}
+    \label{fig:E_kernel_compare}
+\end{figure}
+
+    
 \end{document}
