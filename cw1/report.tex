@@ -3,7 +3,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{siunitx}
-\usepackage[a4paper, total={6in, 9in}]{geometry}
+\usepackage[a4paper, total={6in, 10in}]{geometry}
 \usepackage{titling}
 \usepackage{listings}
 \usepackage{subfig}
@@ -184,7 +184,7 @@ y = chol(K + 1e-6*eye(N_points))' * gpml_randn(2, N_points, N_samples);
     \label{fig:D_prod_kernel_samples}
 \end{figure}
 
-\section(Task E)
+\section{Task E}
 
 \begin{lstlisting}[caption=Code to train and calculate prediction intervals of a 2D GP with SE ARD kernel, captionpos=b, basicstyle=\small]
 [xs1, xs2] = meshgrid(linspace(-10, 10, 101), linspace(-10, 10, 101));
