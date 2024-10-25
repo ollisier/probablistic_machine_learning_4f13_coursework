@@ -38,7 +38,7 @@ Our model has a GP with squared exponential (SE) covariance function and zero me
     \centering
     \begin{tabular}{|c|c|c|c|c|}
         \hline
-         & $\lambda$ & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
+         & $\lambda$ & $\sigma_f$ & $\sigma_n$ & $\ln(Z_{|\textbf{y}})$ \\
         \hline
         Initial & $0.3679$ & $1$ & $1$ & $\num{-9.2910e+01}$ \\ 
         Optimised & $0.1282$ & $0.8970$ & $0.1178$ & $\num{-1.1899e+01}$ \\ 
@@ -70,7 +70,44 @@ We plot the mean and 95\% error bars of the predictive distribution (Equ.\ref{eq
 
 \section{Task B}
 
+\begin{lstlisting}[caption=Code to sweep $\lambda$ and $\sigma_n$ to identify local minima of $\log(Z_{|\textbf{y}})$, captionpos=b, basicstyle=\small]
+sf = 0;
+[ell, sn] = meshgrid(-4:0.1:4, -4:0.1:1);
+nlZ = zeros(size(ell));
+for i = 1:numel(ell)
+    hyp = struct('mean', [], 'cov', [ell(i) sf], 'lik', sn(i));
+    nlZ(i) = gp(hyp, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
+end
+minima = islocalmin2(nlZ);
+\end{lstlisting}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{B/model_evidence_contour.eps}
+    \caption{Contour of $\ln(\ln(Z_{|\textbf{y}}))$ with $\lambda$ and $\sigma_n$ for fixed $\sigma_f = 1$. Shows the two local maxima of marginal likelihood given in Table \ref{table:B_hyper_parameter_optima}}
+    \label{fig:B_marginal_liklihood_contour}
+\end{figure}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+         & $\lambda$ & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
+        \hline
+        Optimum 1 & $0.1282$ & $0.8970$ & $0.1178$ & $\num{-1.1899e+01}$ \\ 
+        Optimum 2 & $8.0492$ & $0.6957$ & $0.6631$ & $\num{-7.8220e+01}$ \\ 
+        \hline
+    \end{tabular}
+    \caption{Hyper-parameter values at 2 local maxima of log marginal likelihood}
+    \label{table:B_hyper_parameter_optima}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{B/hp_optimum_comparison}
+    \caption{Prediction intervals of GP with hyper-parameters from Table \ref{table:B_hyper_parameter_optima}. Top: Optimum 1, Bottom: Optimum 2}
+    \label{fig:B_hyper_parameter_optimum_comparison}
+\end{figure}
 
 
 \end{document}

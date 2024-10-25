@@ -9,33 +9,26 @@ likfunc = @likGauss;
 
 
 % Sweep hyper-parameters and plot slices 
-[ell, sf, sn] = meshgrid(-3:0.1:3, -1:0.01:1, -3:0.1:0);
-
+sf = 0;
+[ell, sn] = meshgrid(-4:0.1:4, -4:0.1:1);
 nlZ = zeros(size(ell));
-
 for i = 1:numel(ell)
-    hyp = struct();
-    hyp.mean = [];
-    hyp.cov = [ell(i) sf(i)];
-    hyp.lik = sn(i);
-
-    nlZ(i) = log(gp(hyp, @infGaussLik, meanfunc, covfunc, likfunc, x, y));
+    hyp = struct('mean', [], 'cov', [ell(i) sf], 'lik', sn(i));
+    nlZ(i) = gp(hyp, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
 end
+minima = islocalmin2(nlZ);
 
- 
 figure
-
-x_figs = ceil(sqrt(size(ell, 3)));
-y_figs = ceil(size(ell, 3) / x_figs);
-
-for i = 1:size(ell, 3)
-    subplot(y_figs, x_figs, i);
-    contour(ell(:,:,i), sf(:,:,i), nlZ(:,:,i), 30)
-    title(sprintf('sn = %f', sn(1,1,i)))
-    xlabel('ell')
-    ylabel('sf')
-    clim([min(nlZ, [], 'all'), max(nlZ, [], 'all')])
-end
+hold on
+contourf(ell, sn, log(nlZ), 50, DisplayName='Log Log Negative Marginal Likelihood')
+scatter(ell(minima), sn(minima), '+r', DisplayName='Local Optima')
+title(sprintf('\\sigma_s = %f', exp(sf)))
+xlabel('ln(\lambda)', Interpreter='tex')
+ylabel('ln(\sigma_n)', Interpreter='tex')
+c = colorbar;
+c.Label.String = 'ln(ln(-Z_{|y}))';
+legend
+saveas(gcf,'figures/B/model_evidence_contour','epsc')
 
 % Compare local minima
 hyp_init = struct();
@@ -65,5 +58,8 @@ for i = 1:length(hyp_init)
     fill([xs; flipdim(xs,1)], f, [7 7 7]/8)
     plot(xs, mu); 
     scatter(x, y, '+');
-    title(sprintf('ell = %f, sf = %f, sn = %f -> nlZ = %f', hyp_min.cov(1), hyp_min.cov(2), hyp_min.lik(1), nlZ_min))
+    ylabel('Output - y')
+    fprintf('ell = %f, sf = %f, sn = %f -> nlZ = %f\n', exp(hyp_min.cov(1)), exp(hyp_min.cov(2)), exp(hyp_min.lik(1)), -nlZ_min)
 end
+xlabel('Input - x')
+saveas(gcf,'figures/B/hp_optimum_comparison','epsc')
