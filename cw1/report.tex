@@ -33,7 +33,7 @@ hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik,
 Our model has a GP with squared exponential (SE) covariance function and zero mean along with a gaussian noise. The SE covariance function has two hyper-parameters, $\lambda$ which controls the characteristic length scale of the process and $\sigma_f^2$ which controls the variance in the output value of the GP. The gaussian noise has one hyper-parameter, $\sigma_n^2$, the variance of our measurement noise. 
 \[y = f(x) + \eta : \eta \sim \mathcal{N}(0, \sigma_n^2)\]
 \[f = \mathcal{N}(0, k(x, x'))\]
-\[k(x,x') = \sigma_f^2 \exp(-\frac{(x-x')^2}{2\lambda^2})\]
+\[k(x,x') = \sigma_f^2 \exp(-\frac{(x-x')'(x-x')}{2\lambda^2})\]
 
 \begin{table}[h]
     \centering
@@ -122,7 +122,7 @@ covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
     \centering
     \begin{tabular}{|c|c|c|c|c|}
         \hline
-        $\lambda$ & p & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
+        $\lambda$ & $p$ & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
         \hline
         $0.7048$ & $0.9991$ & $0.6941$ & $0.0851$ & $\num{2.9300e+01}$ \\ 
         \hline
@@ -154,6 +154,32 @@ covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
 
 \section{Task D}
 
+\begin{lstlisting}[caption=Code sample a GP with covariance defined by the product of a periodic SE kernel and a SE kernel, captionpos=b, basicstyle=\small]
+N_points = 200; N_samples = 3;
+x = linspace(-5,5,N_points)';
+cov_func = {@covProd, {@covPeriodic, @covSEiso}}; hyp.cov = [-0.5 0 0 2 0];
+K = feval(cov_func{:}, hyp.cov, x);
+y = chol(K + 1e-6*eye(N_points))' * gpml_randn(2, N_points, N_samples);
+\end{lstlisting}
 
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        $p^1$ & $\lambda^1$ & $\sigma_f^1$ & $\lambda^2$ & $\sigma_f^2$ \\
+        \hline
+        $1$ & $0.6065$ & $1$ & $7.3891$ & $1$ \\
+        \hline
+    \end{tabular}
+    \caption{Hyper-parameter values for periodic SE covariance function}
+    \label{table:D_product_covariance_hyper_parameters}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{D/prod_kernel_samples}
+    \caption{Samples from 3 covariance kernels, hyper-parameters for each given in Table}
+    \label{fig:D_prod_kernel_samples}
+\end{figure}
 
 \end{document}
