@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[11pt, twocolumn]{article}
 
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -7,7 +7,7 @@
 \usepackage{titling}
 \usepackage{listings}
 \usepackage{subfig}
-
+\usepackage{float}
 
 \graphicspath{{figures/}}
 \title{\vspace{-2cm}4F13 Coursework 1 - Gaussian Processes}
@@ -20,29 +20,45 @@
 \maketitle
 \section{Task A}
 
-\begin{lstlisting}[caption=Code to train hyper-parameters and generate the predictive distribution of a GP with squared exponential covariance, captionpos=b, basicstyle=\small]
+Our model is defined as below, it is a Gaussian Process with a squared exponential covariance function and gaussian likelihood. We optimise the hyper-parameters to maximise the marginal likelihood of the data. The code to train the hyper-parameters and generate the predictive distribution is shown in Listing \ref{lst:A}. The initial and optimum hyper-parameters are given in Table \ref{table:A_hyper_parameters}. The predictive distribution is shown in Figure \ref{fig:A}.
+
+\[y = f(x) + \eta : \eta \sim \mathcal{N}(0, \sigma_n^2)\]
+\[f \sim \mathcal{N}(0, k_{SE}(x, x'))\]
+\[k_{SE}(x,x') = \sigma_f^2 \exp(-\frac{(x-x')^2}{2\lambda^2})\]
+
+We can interpret the values of the hyper-parameters as follows:
+\begin{itemize}
+    \item $\lambda$ controls the length scale of the covariance function. A larger value of $\lambda$ will result in a higher covariance between points that are further apart.
+    \item $\sigma_f$ is the amplitude of the covariance function. A larger value of $\sigma_f$ will result in a higher variance in the function values.
+    \item $\sigma_n$ is the noise variance. A larger value of $\sigma_n$ will result in a higher variance in the measurement noise.
+\end{itemize}
+
+The predictive distribution of the GP is shown in Figure \ref{fig:A}. Regions in the input space where there is a higher density of data have a smaller prediction interval. This is explained by the form of the predictive distribution, Equation \ref{equation:A_predictive_distribution}, and the covariance kernel. The first two terms in the predictive covariance are independent of the data and the third term is always negative as the kernel is positive definite. This third term becomes more negative in input regions where data is more dense, resulting in a smaller prediction interval. In regions where there is no data this term approaches zero, resulting in a constant prediction variance equal to $\sigma_f^2 + \sigma_n^2$.
+
+The form of the covariance make intuitive sense too, when a sample point is close to many data points it will have a large covariance with the value of these data points due to the form of the squared exponential kernel. When a sample point is far from the data points, the covariance with the data will be small so our only information on the distribution of the sample point will be the prior, which is a Gaussian with variance $\sigma_f^2 + \sigma_n^2$.
+
+\begin{figure*}[h]
+\begin{lstlisting}[caption=Code to train hyper-parameters and generate the predictive distribution of a GP with squared exponential covariance, captionpos=b, basicstyle=\small, frame=tlrb]
 meanfunc = []; hyp_init.mean = [];
 covfunc = @covSEiso; hyp_init.cov = [-1 0];
 likfunc = @likGauss; hyp_init.lik = 0;
 hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik, 
-                   meanfunc, covfunc, likfunc, x, y);
-[mu, s2] = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y, xs);
+                    meanfunc, covfunc, likfunc, x, y);
+[mu, s2] = gp(hyp_opt, @infGaussLik, meanfunc, 
+                covfunc, likfunc, x, y, xs);
 \end{lstlisting}
+\end{figure*}
 \label{lst:A}
-
-Our model has a GP with squared exponential (SE) covariance function and zero mean along with a gaussian noise. The SE covariance function has two hyper-parameters, $\lambda$ which controls the characteristic length scale of the process and $\sigma_f^2$ which controls the variance in the output value of the GP. The gaussian noise has one hyper-parameter, $\sigma_n^2$, the variance of our measurement noise. 
-\[y = f(x) + \eta : \eta \sim \mathcal{N}(0, \sigma_n^2)\]
-\[f = \mathcal{N}(0, k(x, x'))\]
-\[k(x,x') = \sigma_f^2 \exp(-\frac{(x-x')'(x-x')}{2\lambda^2})\]
 
 \begin{table}[h]
     \centering
+    \small
     \begin{tabular}{|c|c|c|c|c|}
         \hline
          & $\lambda$ & $\sigma_f$ & $\sigma_n$ & $\ln(Z_{|\textbf{y}})$ \\
         \hline
-        Initial & $0.3679$ & $1$ & $1$ & $\num{-9.2910e+01}$ \\ 
-        Optimised & $0.1282$ & $0.8970$ & $0.1178$ & $\num{-1.1899e+01}$ \\ 
+        Initial & $0.368$ & $1$ & $1$ & $\num{-9.29e+01}$ \\ 
+        Opt. & $0.128$ & $0.897$ & $0.118$ & $\num{-1.19e+01}$ \\ 
         \hline
     \end{tabular}
     \caption{Initial and optimum hyper-parameter values when maximising log marginal likelihood of data}
@@ -51,27 +67,24 @@ Our model has a GP with squared exponential (SE) covariance function and zero me
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.75\textwidth]{A/initial_fit_plot}
+    \includegraphics[width=\columnwidth]{A/initial_fit_plot}
     \caption{Mean and 95\% prediction interval of GP with squared exponential covariance function, optimised hyper-parameters used given in Table \ref{table:A_hyper_parameters}}
     \label{fig:A}
 \end{figure}
 
-When we train our model hyper parameters to maximise log marginal likelihood we achieve the optimum values shown in Table \ref{table:A_hyper_parameters}. The covariance length scale, $\lambda$ is similar to the length scale of the undulations in our data. The $\sigma_f$ is much larger than $\sigma_n$ this makes sense as most of the variation in our data can be explained by our GP instead of the measurement noise.
-
-We plot the mean and 95\% error bars of the predictive distribution (Equ.\ref{equation:A_predictive_distribution}) in Fig \ref{fig:A}. We can see that the predictive error bars are smaller where we have data and return to the prior variance ($k(x, x) = \sigma_f^2$) plus $\sigma_n^2$ when there is no nearby data. This is clear from the form of the predictive distribution covariance, the first term is the prior covariance, the second is the noise variance and the third reduces the variance based on the distance between the sample point and our data.
-
-\begin{equation}
+\begin{equation*}
     \begin{gathered}
         y_* \sim \mathcal{N}(m_{|\textbf{y}}(x_*), k_{|\textbf{y}}(x_*, x_*)) \\
         m_{|\textbf{y}}(x) = m(x) + k(x, \textbf{x})[k(\textbf{x}, \textbf{x}) + \sigma_n^2 I]^{-1} (\textbf{y} - m(\textbf{x})) \\
         k_{|\textbf{y}}(x, x') = k(x, x') + \sigma_n^2 - k(x, \textbf{x})[k(\textbf{x}, \textbf{x}) + \sigma_n^2 I]^{-1} k(\textbf{x}, x')
     \end{gathered}
     \label{equation:A_predictive_distribution}
-\end{equation}
+\end{equation*}
 
 \section{Task B}
 
-\begin{lstlisting}[caption=Code to sweep $\lambda$ and $\sigma_n$ to identify local minima of $\log(Z_{|\textbf{y}})$, captionpos=b, basicstyle=\small]
+\begin{figure*}[h]
+\begin{lstlisting}[caption=Code to sweep $\lambda$ and $\sigma_n$ to identify local minima of $\log(Z_{|\textbf{y}})$, captionpos=b, basicstyle=\small, frame=tlrb]
 sf = 0;
 [ell, sn] = meshgrid(-4:0.1:4, -4:0.1:1);
 nlZ = zeros(size(ell));
@@ -82,22 +95,28 @@ end
 minima = islocalmin2(nlZ);
 \end{lstlisting}
 \label{lst:B}
+\end{figure*}
+
+To identify all local maxima of marginal likelihood we can perform a grid search over our hyper parameters. Shown in Figure \ref{fig:B_marginal_liklihood_contour} is a contour plot of marginal likelihood with $\lambda$ and $\sigma_n$ for fixed $\sigma_f = 1$. $\sigma_f = 1$ was chosen to be constant as this slice of our grid search shows the two optimum values nicely. The two local maxima are given in Table \ref{table:B_hyper_parameter_optima} and corresponding prediction intervals are shown in Figure \ref{fig:B_hyper_parameter_optimum_comparison}. Looking at the prediction intervals we see the models that the two hyper-parameter sets correspond to, Optimum 1 explains most of the variation in the data as being due to the value of the Gaussian Process itself, whereas Optimum 2 explains most of the variation as being due to noise in the data. This is reflected in the marginal likelihood values, with Optimum 1 having a higher value than Optimum 2. 
+
+Furthermore, by looking at the residuals of the data in the case of Optimum two we see that they are clearly not normally distributed independent of the input variable, there is correlation between residuals close together in inputs space. This indicated that these hyper-parameters are not a good match for our model and data.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.75\textwidth]{B/model_evidence_contour.eps}
+    \includegraphics[width=\columnwidth]{B/model_evidence_contour.eps}
     \caption{Contour of $\ln(\ln(Z_{|\textbf{y}}))$ with $\lambda$ and $\sigma_n$ for fixed $\sigma_f = 1$. Shows the two local maxima of marginal likelihood given in Table \ref{table:B_hyper_parameter_optima}}
     \label{fig:B_marginal_liklihood_contour}
 \end{figure}
 
 \begin{table}[h]
     \centering
+    \small
     \begin{tabular}{|c|c|c|c|c|}
         \hline
          & $\lambda$ & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
         \hline
-        Optimum 1 & $0.1282$ & $0.8970$ & $0.1178$ & $\num{-1.1899e+01}$ \\ 
-        Optimum 2 & $8.0492$ & $0.6957$ & $0.6631$ & $\num{-7.8220e+01}$ \\ 
+        Max 1 & $0.128$ & $0.897$ & $0.118$ & $\num{-1.19e+01}$ \\ 
+        Max 2 & $8.049$ & $0.696$ & $0.663$ & $\num{-7.82e+01}$ \\ 
         \hline
     \end{tabular}
     \caption{Hyper-parameter values at 2 local maxima of log marginal likelihood}
@@ -106,25 +125,35 @@ minima = islocalmin2(nlZ);
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.75\textwidth]{B/hp_optimum_comparison}
+    \includegraphics[width=\columnwidth]{B/hp_optimum_comparison}
     \caption{Prediction intervals of GP with hyper-parameters from Table \ref{table:B_hyper_parameter_optima}. Top: Optimum 1, Bottom: Optimum 2}
     \label{fig:B_hyper_parameter_optimum_comparison}
 \end{figure}
 
 \section{Task C}
-\begin{lstlisting}[caption=Code to use periodic SE covariance. Training and prediction code same as Listing \ref{lst:A}, captionpos=b, basicstyle=\small]
-covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
+\begin{lstlisting}[caption=Code to use periodic SE covariance. Training and prediction code same as Listing \ref{lst:A}, captionpos=b, basicstyle=\small, frame=tlrb]
+covfunc = @covPeriodic;
+hyp_init.cov = [-1 0 0];
 \end{lstlisting}
 \label{lst:C}
 
+Given below is the form of the periodic squared exponential covariance function. It has a very similar form to the standard squared exponential covariance function, but the measure of "distance" between two points in input space is now $\sin(\frac{\pi}{p}(x-x'))$. This means that the "distance" between two points any multiple of $p$ apart is now zero, giving large covariance between these points. This means that samples from this GP will be periodic with period $p$. The optimised hyper-parameters for the periodic SE covariance function are given in Table \ref{table:C_periodic_covariance_hyper_parameters} and the prediction intervals are shown in Figure \ref{fig:B_periodic_covariance_prediction_intervals}.
+
+
+\[k_{PSE}(x,x') = \sigma_f^2 \exp(-\frac{2}{\lambda^2}\sin^2(\frac{\pi}{p}(x-x')))\]
+
+The effect of the periodic covariance is clear in the prediction intervals. Unlike the previous model where prediction intervals were large in where the density of data was lower, now, as long as there is data a multiple of the period apart the model has small prediction intervals. This is due to the form of the covariance function and predictive distribution.
+
+The marginal likelihood of the periodic model is higher than that of the standard squared exponential model, indicating a better fit. Further evidence that the periodic model is accurate can be seen in the residuals of the data, which are close normally distributed and independent of the input variable shown in Figure \ref{fig:C_noise_distribution}. This matches our model definition.
 
 \begin{table}[h]
     \centering
+    \small
     \begin{tabular}{|c|c|c|c|c|}
         \hline
         $\lambda$ & $p$ & $\sigma_f$ & $\sigma_n$ & $\log(Z_{|\textbf{y}})$ \\
         \hline
-        $0.7048$ & $0.9991$ & $0.6941$ & $0.0851$ & $\num{2.9300e+01}$ \\ 
+        $0.705$ & $0.999$ & $0.694$ & $0.085$ & $\num{2.93e+01}$ \\ 
         \hline
     \end{tabular}
     \caption{Hyper-parameter values for periodic SE covariance function}
@@ -133,12 +162,12 @@ covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.75\textwidth]{C/periodic_covariance_plot}
+    \includegraphics[width=\columnwidth]{C/periodic_covariance_plot}
     \caption{Prediction intervals for periodic SE covariance function with hyper parameters given in Table \ref{table:C_periodic_covariance_hyper_parameters}}
     \label{fig:B_periodic_covariance_prediction_intervals}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure*}[h]
     \centering
     \begin{minipage}{0.5\textwidth}
         \centering
@@ -148,13 +177,14 @@ covfunc = @covPeriodic; hyp_init.cov = [-1 0 0];
         \centering
         \includegraphics[width=\linewidth]{C/noise_plot} % Replace with your figure file
     \end{minipage}
-    \caption{Caption for figure 2}
+    \caption{Left: CDF of residuals of data from periodic SE GP, Right: Residuals of data from periodic SE GP}
     \label{fig:C_noise_distribution}
-\end{figure}
+\end{figure*}
 
 \section{Task D}
 
-\begin{lstlisting}[caption=Code to sample a GP with covariance defined by the product of a periodic SE kernel and a SE kernel, captionpos=b, basicstyle=\small]
+\begin{figure*}[h]
+\begin{lstlisting}[caption=Code to sample a GP with covariance defined by the product of a periodic SE kernel and a SE kernel, captionpos=b, basicstyle=\small, frame=tlrb]
 N_points = 200; N_samples = 3;
 x = linspace(-5,5,N_points)';
 cov_func = {@covProd, {@covPeriodic, @covSEiso}}; hyp.cov = [-0.5 0 0 2 0];
@@ -162,31 +192,39 @@ K = feval(cov_func{:}, hyp.cov, x);
 y = chol(K + 1e-6*eye(N_points))' * gpml_randn(2, N_points, N_samples);
 \end{lstlisting}
 \label{lst:2D}
+\end{figure*}
 
+Sampling a GP with covariance kernel equal to the product of two covariance kernels results in samples that look like the product of samples from the two individual kernels. In this task we are sampling a GP with the kernel defined below.
+
+\[k(x, x') = k_{PSE | p^1, \lambda^1, \sigma_f^1}(x, x')k_{SE | \lambda^2, \sigma_f^2}(x, x')\]
+
+This is the product of a periodic squared exponential kernel and a squared exponential kernel. The periodic kernel has a period of $p^1$ and a small characteristic length scale, the squared exponential kernel has a larger characteristic length scale. Samples from GPs with the individual kernels and the product are shown in Figure \ref{fig:D_prod_kernel_samples}. It is clear that the samples with the product kernel look like the product of the samples from the individual kernels.
 
 \begin{table}[h]
     \centering
+    \small
     \begin{tabular}{|c|c|c|c|c|}
         \hline
         $p^1$ & $\lambda^1$ & $\sigma_f^1$ & $\lambda^2$ & $\sigma_f^2$ \\
         \hline
-        $1$ & $0.6065$ & $1$ & $7.3891$ & $1$ \\
+        $1$ & $0.607$ & $1$ & $7.389$ & $1$ \\
         \hline
     \end{tabular}
     \caption{Hyper-parameter values for periodic SE covariance function}
     \label{table:D_product_covariance_hyper_parameters}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure*}[h]
     \centering
     \includegraphics[width=\textwidth]{D/prod_kernel_samples}
-    \caption{Samples from 3 covariance kernels, hyper-parameters for each given in Table}
+    \caption{Samples from 3 covariance kernels, hyper-parameters for each given in Table \ref{table:D_product_covariance_hyper_parameters}}
     \label{fig:D_prod_kernel_samples}
-\end{figure}
+\end{figure*}
 
 \section{Task E}
 
-\begin{lstlisting}[caption=Code to train and calculate prediction intervals of a 2D GP with SE ARD kernel, captionpos=b, basicstyle=\small]
+\begin{figure*}[h]
+\begin{lstlisting}[caption=Code to train and calculate prediction intervals of a 2D GP with SE ARD kernel, captionpos=b, basicstyle=\small, frame=tlrb]
 [xs1, xs2] = meshgrid(linspace(-10, 10, 101), linspace(-10, 10, 101));
 xs = [reshape(xs1, [], 1), reshape(xs2, [], 1)];
 mean_func = []; hyp_init.mean = [];
@@ -198,16 +236,21 @@ hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik,
               cov_func, lik_func, x, y, xs);
 \end{lstlisting}
 \label{lst:E}
+\end{figure*}
+
+
+\[k_{SEard}(x, x') = \sigma_f^2 \exp(-\frac{1}{2}\sum_{i=1}^{D} \frac{(x_i - x_i')^2}{\lambda_i})\]
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.75\textwidth]{E/raw_data}
+    \includegraphics[width=\columnwidth]{E/raw_data}
     \caption{Visualisation of data in 'cw1e.mat'}
     \label{fig:E_data_vis}
 \end{figure}
 
-\begin{table}[h]
+\begin{table*}[h]
     \centering
+    \small
     \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
         \hline
          & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_n$ & $\ln(Z_{|\textbf{y}})$ \\
@@ -218,14 +261,14 @@ hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik,
     \end{tabular}
     \caption{Hyper-parameter values for periodic SE covariance function}
     \label{table:E_hyper_parameters}
-\end{table}
+\end{table*}
 
-\begin{figure}[h]
+\begin{figure*}[h]
     \centering
     \includegraphics[width=\textwidth]{E/kernel_comparison}
     \caption{}
     \label{fig:E_kernel_compare}
-\end{figure}
+\end{figure*}
 
     
 \end{document}
