@@ -27,7 +27,7 @@ fprintf('Optimised log marginal likelihood: %f\n', -Z_opt)
 % Plot predictive distribution
 f = [mu+2*sqrt(s2); flipdim(mu-2*sqrt(s2),1)];
 
-figure;
+fig = figure;
 hold on
 fill([xs; flipdim(xs,1)], f, [7 7 7]/8, DisplayName='95% Prediction Error Bars')
 plot(xs, mu, DisplayName='Prediction Mean'); 
@@ -36,4 +36,6 @@ xlabel('Input - x')
 ylabel('Output - y')
 legend
 
-saveas(gcf,'figures/A/initial_fit_plot','epsc')
+fig.Position = [0,0,800,420];
+
+saveas(fig,'figures/A/initial_fit_plot','epsc')

@@ -21,7 +21,7 @@ fprintf('Optimised log marginal likelihood: %f\n', -Z_opt)
 % Plot predictive distribution
 f = [mu+2*sqrt(s2); flipdim(mu-2*sqrt(s2),1)];
 
-figure;
+fig = figure;
 hold on
 fill([xs; flipdim(xs,1)], f, [7 7 7]/8, DisplayName='95% Prediction Error Bars')
 plot(xs, mu, DisplayName='Prediction Mean'); 
@@ -29,8 +29,9 @@ scatter(x, y, '+', DisplayName='Data');
 xlabel('Input - x')
 ylabel('Output - y')
 legend
+fig.Position = [0,0,800,420];
 
-saveas(gcf,'figures/C/periodic_covariance_plot','epsc')
+saveas(fig,'figures/C/periodic_covariance_plot','epsc')
 
 % Calculate measurement error
 mu_data = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y, x);
@@ -39,7 +40,7 @@ error = y - mu_data;
 x_cdf = linspace(min(error), max(error), 1001);
 y_cdf = normcdf(x_cdf, 0, exp(hyp_opt.lik(1)));
 
-figure
+fig = figure;
 hold on
 cdfplot(error)
 plot(x_cdf, y_cdf)
