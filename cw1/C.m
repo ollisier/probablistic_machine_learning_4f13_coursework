@@ -16,7 +16,7 @@ Z_opt = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
 
 fprintf('Optimised hyper-paramters:\n')
 disp(structfun(@exp, hyp_opt, UniformOutput=false))
-fprintf('Optimised log marginal likelihood: %f\n', -Z_opt)
+fprintf('Optimised negative log marginal likelihood: %f\n', Z_opt)
 
 % Plot predictive distribution
 f = [mu+2*sqrt(s2); flipdim(mu-2*sqrt(s2),1)];
@@ -44,7 +44,7 @@ fig = figure;
 hold on
 cdfplot(error)
 plot(x_cdf, y_cdf)
-xlabel('Noise - \eta')
+xlabel('Residuals - z')
 ylabel('F(\eta)')
 legend('Empirical CDF', 'Theoretical CDF')
 
@@ -53,6 +53,6 @@ saveas(gcf,'figures/C/noise_cdf','epsc')
 figure
 scatter(x, error, '.')
 xlabel('Input - X')
-ylabel('Noise - \eta')
+ylabel('Residuals - z')
 
 saveas(gcf,'figures/C/noise_plot','epsc')

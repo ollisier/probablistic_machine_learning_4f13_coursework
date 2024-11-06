@@ -18,7 +18,7 @@ for i = 1:numel(ell)
 end
 minima = islocalmin2(nlZ);
 
-fig = figure
+fig = figure;
 hold on
 contourf(ell, sn, log(nlZ), 50, DisplayName='Log L')
 scatter(ell(minima), sn(minima), '+r', DisplayName='Local Minima')
@@ -60,7 +60,7 @@ for i = 1:length(hyp_init)
     plot(xs, mu, DisplayName='Prediction Mean'); 
     scatter(x, y, '+', DisplayName='Data');
     ylabel('Output - y')
-    fprintf('ell = %f, sf = %f, sn = %f -> nlZ = %f\n', exp(hyp_min.cov(1)), exp(hyp_min.cov(2)), exp(hyp_min.lik(1)), -nlZ_min)
+    fprintf('ell = %f, sf = %f, sn = %f -> nlZ = %f\n', exp(hyp_min.cov(1)), exp(hyp_min.cov(2)), exp(hyp_min.lik(1)), nlZ_min)
     xlabel('Input - x')
     legend
 

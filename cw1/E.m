@@ -44,7 +44,7 @@ for i = 1:length(cov_funcs)
         field = fields{j};
         fprintf('%s: %s\n', field, mat2str(round(exp(hyp_opt.(field)), 4)))
     end
-    fprintf('Log marginal likelihood: %f\n', -Z_opt)
+    fprintf('Negative log marginal likelihood: %f\n', Z_opt)
 
     [mu, s2] = gp(hyp_opt, @infGaussLik, mean_func, cov_funcs{i}, lik_func, x, y, xs);
 

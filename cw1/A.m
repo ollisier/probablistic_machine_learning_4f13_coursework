@@ -18,11 +18,11 @@ Z_opt = gp(hyp_opt, @infGaussLik, meanfunc, covfunc, likfunc, x, y);
 
 fprintf('Initial hyper-paramters:\n')
 disp(structfun(@exp, hyp_init, UniformOutput=false))
-fprintf('Initial log marginal likelihood: %f\n', -Z_init)
+fprintf('Initial negative log marginal likelihood: %f\n', Z_init)
 
 fprintf('Optimised hyper-paramters:\n')
 disp(structfun(@exp, hyp_opt, UniformOutput=false))
-fprintf('Optimised log marginal likelihood: %f\n', -Z_opt)
+fprintf('Optimised negative log marginal likelihood: %f\n', Z_opt)
 
 % Plot predictive distribution
 f = [mu+2*sqrt(s2); flipdim(mu-2*sqrt(s2),1)];
