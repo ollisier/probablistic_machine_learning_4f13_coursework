@@ -32,8 +32,6 @@ cov_name = {
     '@covSum, \{@covSEard, @covSEard\}'
 };
 
-figure
-
 for i = 1:length(cov_funcs)
     hyp = hyp_init;
     hyp.cov = cov_hyp{i};
@@ -50,20 +48,16 @@ for i = 1:length(cov_funcs)
 
     [mu, s2] = gp(hyp_opt, @infGaussLik, mean_func, cov_funcs{i}, lik_func, x, y, xs);
 
-    subplot(1, length(cov_funcs), i)
+    figure
     hold on
     surf(xs1, xs2, reshape(mu + 2*s2, size(xs1)))
     surf(xs1, xs2, reshape(mu - 2*s2, size(xs1)))
-    title(cov_name{i})
 
     view([-37.5 30])
     xlabel('X_1')
     ylabel('X_2')
     zlabel('Y')
+
+    saveas(gcf,sprintf('figures/E/kernel_comparison_%d', i),'epsc')
+
 end
-
-f = gcf;
-f.Position = [0, 0, 1000, 420];
-
-saveas(gcf,'figures/E/kernel_comparison','epsc')
-

@@ -24,8 +24,7 @@
 
 Our model is defined as below, we have a gaussian process ($f$) with a squared exponential covariance function ($k_{SE}$), zero mean and gaussian likelihood. 
 
-\[y = f(x) + \eta : \eta \sim \mathcal{N}(0, \sigma_n^2)\]
-\[f \sim \mathcal{N}(0, k_{SE}(x, x'))\]
+\[y = f(x) + \eta : f \sim \mathcal{N}(0, k_{SE}(x, x')); \eta \sim \mathcal{N}(0, \sigma_n^2)\]
 \[k_{SE}(x,x') = \sigma_f^2 \exp(-\frac{(x-x')^2}{2\lambda^2})\]
 
 The model hyper-parameters are trained by minimising the negative log marginal likelihood ($\Lik$). We do this and generate the predictive distribution using the code in Listing \ref{lst:A}. 
@@ -81,26 +80,14 @@ There are 3 terms, the first two are constant, $\sigma_f^2 + \sigma_n^2$, these 
 
 \section{Task B}
 
-To identify all the local minima of $\Lik$ we perform a grid search over the hyper-parameters. Code to perform this is shown in Listing \ref{lst:B}.
-
-\begin{lstlisting}[caption=Code to sweep $\lambda$ and $\sigma_n$ to identify local minima of $\Lik$, captionpos=b, basicstyle=\small, frame=tlrb]
-[ell, sn, sf] = meshgrid(-4:0.1:4, -4:0.1:1, -4:0.1:1);
-nlZ = zeros(size(ell));
-for i = 1:numel(ell)
-    hyp = struct('mean', [], 'cov', [ell(i) sf(i)], 'lik', sn(i));
-    nlZ(i) = gp(hyp, @infGaussLik, meanf, covf, likf, x, y);
-end
-\end{lstlisting}
-\label{lst:B}
+To identify all local minima of $\Lik$ we perform a grid search over the hyper-parameters. Figure \ref{fig:B_marginal_liklihood_contour} shows a contour $\Lik$ for a slice of the search with $\sigma_f=1$ which shows the two minima well. The second optimum (Optimum 2 in Table \ref{table:AB_hyper_parameters}) has a much longer length scale, $\lambda$, and larger measurement noise, $\sigma_n$. From the predictive distribution, Figure \ref{fig:AB_predictive_distributions_2}, we see that this optimum results in a model that explains most of the output variation as measurement noise instead of the value of the function unlike Optimum 1 which does the opposite. However, this second optimum is a worse fit with a higher value of $\Lik$. Furthermore, by observing the distribution of the residuals we see that they do not seem to be independent of the input variable, while our model expects independent measurement noise. Therefore, we can conclude that Optimum 1 is more likely to be the model that generated this data. 
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\columnwidth]{B/model_evidence_contour.eps}
+    \includegraphics[width=0.75\columnwidth]{B/model_evidence_contour.eps}
     \caption{Contour of $\ln(\Lik)$ with $\lambda$ and $\sigma_n$ for fixed $\sigma_f = 1$. Shows the two local minima of $\Lik$ given in Table \ref{table:AB_hyper_parameters}. We are plotting $\ln(\Lik)$ for more evenly spaced contours.}
     \label{fig:B_marginal_liklihood_contour}
 \end{figure}
-
-Figure \ref{fig:B_marginal_liklihood_contour} shows a contour $\Lik$ for a slice of the search with $\sigma_f=1$ which shows the two minima well. The second optimum (Optimum 2 in Table \ref{table:AB_hyper_parameters}) has a much longer length scale, $\lambda$, and larger measurement noise, $\sigma_n$. From the predictive distribution, Figure \ref{fig:AB_predictive_distributions_2}, we see that this optimum results in a model that explains most of the output variation as measurement noise instead of the value of the function unlike Optimum 1 which does the opposite. However, this second optimum is a worse fit with a higher value of $\Lik$. Furthermore, by observing the distribution of the residuals we see that they do not seem to be independent of the input variable, while our model expects independent measurement noise. Therefore, we can conclude that Optimum 1 is more likely to be the model that generated this data. 
 
 \section{Task C}
 
@@ -112,17 +99,6 @@ covf = @covPeriodic; hyp_init.cov = [-1 0 0];
 Given below is the form of the periodic squared exponential covariance function. It has a very similar form to the standard squared exponential covariance function, but the measure of "distance" between two points in input space is now $\sin(\frac{\pi}{p}(x-x'))$. This means that the "distance" between two points any multiple of $p$ apart is now zero, giving large covariance between these points. This means that samples from this GP will be periodic with period $p$. The optimised hyper-parameters for the periodic SE covariance function are given in Table \ref{table:C_periodic_covariance_hyper_parameters} and the prediction intervals are shown in Figure \ref{fig:C_periodic_covariance_prediction_intervals}.
 
 \[k_{PSE}(x,x') = \sigma_f^2 \exp(-\frac{2}{\lambda^2}\sin^2(\frac{\pi}{p}(x-x')))\]
-
-The effect of the periodic covariance is clear in the prediction intervals. Unlike the previous model where prediction intervals were large in where the density of data was lower, now, as long as there is data a multiple of the period apart the model has small prediction intervals. This is due to the form of the covariance function and predictive distribution.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.9\columnwidth]{C/periodic_covariance_plot}
-    \caption{Prediction intervals for periodic SE covariance function with hyper-parameters given in Table \ref{table:C_periodic_covariance_hyper_parameters}}
-    \label{fig:C_periodic_covariance_prediction_intervals}
-\end{figure}
-
-The marginal likelihood of the periodic model is higher than that of the standard squared exponential model, indicating a better fit. Further evidence that the periodic model is accurate can be seen in the residuals of the data, which are close normally distributed and independent of the input variable shown in Figure \ref{fig:C_noise_distribution}. This matches our model definition.
 
 \begin{table}[h]
     \centering
@@ -138,15 +114,26 @@ The marginal likelihood of the periodic model is higher than that of the standar
     \label{table:C_periodic_covariance_hyper_parameters}
 \end{table}
 
+The effect of the periodic covariance is clear in the prediction intervals. Unlike the previous model where prediction intervals were large in where the density of data was lower, now, as long as there is data a multiple of the period apart the model has small prediction intervals. This is due to the form of the covariance function and predictive distribution.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\columnwidth]{C/periodic_covariance_plot}
+    \caption{Prediction intervals for periodic SE covariance function with hyper-parameters given in Table \ref{table:C_periodic_covariance_hyper_parameters}}
+    \label{fig:C_periodic_covariance_prediction_intervals}
+\end{figure}
+
+The marginal likelihood of the periodic model is higher than that of the standard squared exponential model, indicating a better fit. Further evidence that the periodic model is accurate can be seen in the residuals of the data, which are close normally distributed and independent of the input variable shown in Figure \ref{fig:C_noise_distribution}. This matches our model definition.
+
 \begin{figure}[h]
     \centering
     \begin{minipage}{0.5\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{C/noise_cdf} % Replace with your figure file
+        \includegraphics[width=\linewidth]{C/noise_cdf}
     \end{minipage}%
     \begin{minipage}{0.5\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{C/noise_plot} % Replace with your figure file
+        \includegraphics[width=\linewidth]{C/noise_plot}
     \end{minipage}
     \caption{Left: CDF of residuals of data from periodic SE GP, Right: Residuals of data from periodic SE GP}
     \label{fig:C_noise_distribution}
@@ -154,29 +141,28 @@ The marginal likelihood of the periodic model is higher than that of the standar
 
 \section{Task D}
 
-\begin{figure}[h]
-\begin{lstlisting}[caption=Code to sample a GP with covariance defined by the product of a periodic SE kernel and a SE kernel, captionpos=b, basicstyle=\small, frame=tlrb]
-N_points = 200; N_samples = 3;
+\begin{lstlisting}[caption=Code to generate samples from a GP with covariance given by covf, captionpos=b, basicstyle=\small, frame=tlrb]
+N_points = 200; N_samples = 2;
 x = linspace(-5,5,N_points)';
-cov_func = {@covProd, {@covPeriodic, @covSEiso}}; hyp.cov = [-0.5 0 0 2 0];
-K = feval(cov_func{:}, hyp.cov, x);
+K = feval(covf{:}, hyp.cov, x);
 y = chol(K + 1e-6*eye(N_points))' * gpml_randn(2, N_points, N_samples);
 \end{lstlisting}
-\label{lst:2D}
-\end{figure}
+\label{lst:D}
 
-Sampling a GP with covariance kernel equal to the product of two covariance kernels results in samples that look like the product of samples from the two individual kernels. In this task we are sampling a GP with the kernel defined below.
+To sample from a GP we can choose a set of evaluation points - $\textbf{x}$ and evaluate our mean and covariance functions at these points to obtain a mean vector - $\boldsymbol{\mu}$ and covariance matrix - $K$. We can generate our samples $\textbf{y} = \boldsymbol{\mu} + chol(K)^T \boldsymbol{\eta}$ where $\boldsymbol{\eta} \sim \mathcal{N}(\mathbf{0}, I)$.
 
-\[k(x, x') = k_{PSE | p^1, \lambda^1, \sigma_f^1}(x, x')k_{SE | \lambda^2, \sigma_f^2}(x, x')\]
+We require the Cholesky decomposition decomposition of $K$ - $chol(K)$, however, this is only possible for positive definite matrices. Our covariance kernel is positive semi-definite, therefore, to ensure $K$ is positive definite we can add $\epsilon I$ before the decomposition. This ensures it is positive definite without changing the behaviour of the matrix much. The code to generate the samples is shown in Listing \ref{lst:D} for $\epsilon = \num{1e-6}$.
 
-This is the product of a periodic squared exponential kernel and a squared exponential kernel. The periodic kernel has a period of $p^1$ and a small characteristic length scale, the squared exponential kernel has a larger characteristic length scale. Samples from GPs with the individual kernels and the product are shown in Figure \ref{fig:D_prod_kernel_samples}. It is clear that the samples with the product kernel look like the product of the samples from the individual kernels.
+We sample a GP with a covariance kernel that is the product of a long length scale SE kernel and short length scale periodic SE kernel. The form of the kernel is below and hyper-parameters are given in Table \ref{table:D_product_covariance_hyper_parameters}.
+
+\[k(x, x') = k_{PSE | p^{(1)}, \lambda^{(1)}, \sigma_f^{(1)}}(x, x')k_{SE | \lambda^{(2)}, \sigma_f^{(2)}}(x, x')\]
 
 \begin{table}[h]
     \centering
     \small
     \begin{tabular}{|c|c|c|c|c|}
         \hline
-        $p^1$ & $\lambda^1$ & $\sigma_f^1$ & $\lambda^2$ & $\sigma_f^2$ \\
+        $p^{(1)}$ & $\lambda^{(1)}$ & $\sigma_f^{(1)}$ & $\lambda^{(2)}$ & $\sigma_f^{(2)}$ \\
         \hline
         $1$ & $0.607$ & $1$ & $7.389$ & $1$ \\
         \hline
@@ -185,67 +171,92 @@ This is the product of a periodic squared exponential kernel and a squared expon
     \label{table:D_product_covariance_hyper_parameters}
 \end{table}
 
+We observe that the samples in Figure \ref{fig:D_prod_kernel_samples_3} exhibit characteristics of both kernels shown in Figures \ref{fig:D_prod_kernel_samples_1} and \ref{fig:D_prod_kernel_samples_2}. Specifically, they display periodic behaviour with a period of $p^{(1)} = 1$ over short length scales, like Figure \ref{fig:D_prod_kernel_samples_1}, combined with gradual changes over larger length scales, Figure \ref{fig:D_prod_kernel_samples_2}.
+
+
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{D/prod_kernel_samples}
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{D/prod_kernel_samples_1} 
+        \subcaption{Periodic squared exponential kernel with small $\lambda$}
+        \label{fig:D_prod_kernel_samples_1}
+    \end{minipage}
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{D/prod_kernel_samples_2} 
+        \subcaption{Squared exponential kernel with large $\lambda$}
+        \label{fig:D_prod_kernel_samples_2}
+    \end{minipage}
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{D/prod_kernel_samples_3} 
+        \subcaption{Product kernel}
+        \label{fig:D_prod_kernel_samples_3}
+    \end{minipage}
+
     \caption{Samples from 3 covariance kernels, hyper-parameters for each given in Table \ref{table:D_product_covariance_hyper_parameters}}
     \label{fig:D_prod_kernel_samples}
 \end{figure}
 
 \section{Task E}
 
-\begin{figure}[h]
-\begin{lstlisting}[caption=Code to train and calculate prediction intervals of a 2D GP with SE ARD kernel, captionpos=b, basicstyle=\small, frame=tlrb]
-[xs1, xs2] = meshgrid(linspace(-10, 10, 101), linspace(-10, 10, 101));
-xs = [reshape(xs1, [], 1), reshape(xs2, [], 1)];
-mean_func = []; hyp_init.mean = [];
-cov_func = {@covSum, {@covSEard, @covSEard}}; hyp_init.cov = 0.1*randn(6,1);
-lik_func = @likGauss; hyp_init.lik = 0;
-hyp_opt = minimize(hyp_init, @gp, -100, @infGaussLik, 
-                   mean_func, cov_func, lik_func, x, y);
-[mu, s2] = gp(hyp_opt, @infGaussLik, mean_func, 
-              cov_func, lik_func, x, y, xs);
-\end{lstlisting}
-\label{lst:E}
-\end{figure}
+The squared exponential Automatic Relevance Determination (SE-ARD) kernel, given in Equation \ref{eq:SEARD}, is similar to the standard squared exponential kernel, but the distance measure can now be weighted differently for each input dimension. This can be useful when the input dimensions have different units or scales. 
 
-The squared exponential Automatic Relevance Determination (SEard) kernel is similar to the standard squared exponential kernel, but the distance measure can now be weighted differently for each input dimension. This can be useful when the input dimensions have different units or scales. When we fit the sample data with the SEard kernel we get the hyper-parameters given in Table \ref{table:E_hyper_parameters}. The length scales in each input dimension are similar so the model is not making use of the ARD property. The prediction intervals of the model are shown in Figure \ref{fig:E_kernel_compare}. When our kernel is the sum of two independent SEard kernels we observe that the fitted hyper paramteres change dramatically. In each each SEard kernel one length scale paramter is significantly larger than the other. Therefore, that dimension has almost no effect on the covariance between points. This is similar to a covariance function that is the sum of two scalar squared exponential kernels in each input dimension. Essentially our function can be decomposed as $f(x,y) = f_x(x) + f_y(y)$. Both models have similar prediction intervals in the region of the data. However, the behaviour of the prediction intervals when extrapolating is different. While the first model very quickly returns to the prior prediction interval, the second model keeps smaller prediction intervals in directions parallel to the input axes. This is because in these extrapolation regions in one of the two SEard kernels the "distance" measure to the region of data is small as it is measuring changes in the other input dimension. This means gives a decrease in prediction interval from that kernel. 
+\begin{equation}
+    k_{SE-ARD}(x, x') = \sigma_f^2 \exp(-\frac{1}{2}\sum_{i=1}^{D} \frac{(x_i - x_i')^2}{\lambda_i}^2)
+    \label{eq:SEARD}
+\end{equation}
 
-The second model has a higher log likelihood than the first however I would argue that the first model is better in most cases. By observing our dataset there we have not covered enough of the input space to conclude that we can decompose the function into the sum of functions in each input dimension. It would therefore not be appropriate to be confident in the extrapolation behaviour of this model.
-
-
-\[k_{SEard}(x, x') = \sigma_f^2 \exp(-\frac{1}{2}\sum_{i=1}^{D} \frac{(x_i - x_i')^2}{\lambda_i^2})\]
-
-\[k_{SEard}(x, x') = \sum_{i=1}^{D} {\sigma_f^i}^2 \exp(-\frac{1}{2 \lambda^i} (x_i - x_i')^2)\]
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.75\columnwidth]{E/raw_data}
-    \caption{Visualisation of data in 'cw1e.mat'}
-    \label{fig:E_data_vis}
-\end{figure}
+When we fit the sample data with the SE-ARD kernel we get the hyper-parameters given in Table \ref{table:E_hyper_parameters} case A. The length scales in each input dimension are similar so the model is not making use of the ARD property. The prediction intervals of the model are shown in Figure \ref{fig:E_kernel_compare_1}. 
 
 \begin{table*}[h]
     \centering
     \small
     \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
         \hline
-         & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_n$ & $\ln(Z_{|\textbf{y}})$ \\
+        Case & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_f^1$ & $\lambda_1^1$ & $\lambda_2^1$ & $\sigma_n$ & $\Lik$ \\
         \hline
-        $covSEard$ & $1.107$ & $1.511$ & $1.285$ & - & - & - & $0.1026$ & $\num{1.9218e+01}$ \\ 
-        $covSEard + covSEard$ & $0.7116$ & $1104$ & $0.9864$ & $1.108$ & $1.446$ & $1281$ & $0.0979$ & $\num{6.6394e+01}$ \\
+        A: $k_{SE-ARD}$ & $1.107$ & $1.511$ & $1.285$ & - & - & - & $0.1026$ & $\num{1.9218e+01}$ \\ 
+        B: $k_{SE-ARD}^{(1)} + k_{SE-ARD}^{(2)}$ & $0.7116$ & $1104$ & $0.9864$ & $1.108$ & $1.446$ & $1281$ & $0.0979$ & $\num{6.6394e+01}$ \\
         \hline
     \end{tabular}
     \caption{Hyper-parameter values for periodic SE covariance function}
     \label{table:E_hyper_parameters}
 \end{table*}
 
+When our kernel is the sum of two independent SE-ARD kernels case B we observe that the fitted hyper parameters change dramatically. In each each SE-ARD kernel one length scale parameter is significantly larger than the other. Therefore, that dimension has almost no effect on the covariance between points. This is similar to a covariance function that is the sum of two scalar squared exponential kernels in each input dimension. Essentially our GP can be decomposed as $f(x,y) = f_x(x) + f_y(y)$. 
+
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\columnwidth]{E/kernel_comparison}
-    \caption{}
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{E/kernel_comparison_1} 
+        \subcaption{Case A}
+        \label{fig:E_kernel_compare_1}
+    \end{minipage}
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{E/kernel_comparison_2} 
+        \subcaption{Case B}
+        \label{fig:E_kernel_compare_2}
+    \end{minipage}
+    \caption{95\% Prediction intervals for models given in Table \ref{table:E_hyper_parameters} using data from cw1e.mat}
     \label{fig:E_kernel_compare}
 \end{figure}
+
+Both models have similar prediction intervals in the region of the data. However, the behaviour of the prediction intervals when extrapolating is different. While the first model very quickly returns to the prior prediction interval, the second model keeps smaller prediction intervals in directions parallel to the input axes. This is because in these directions the "distance" measure to the data in one of the two SE-ARD kernels the is small as it is measuring changes in the other input dimension. This results in a decrease in prediction interval from that kernel. 
+
+The model in case B has a higher likelihood than the first however we would argue that the case A model is better in most cases. By observing our dataset, we have not covered enough of the input space to conclude that we can decompose the function into a sum of functions in each input dimension. It would therefore not be appropriate to be confident in the extrapolation behaviour of this model.
+
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.75\columnwidth]{E/raw_data}
+%     \caption{Visualisation of data in 'cw1e.mat'}
+%     \label{fig:E_data_vis}
+% \end{figure}
+
 
     
 \end{document}
