@@ -229,7 +229,7 @@ The squared exponential Automatic Relevance Determination (SE-ARD) kernel, given
     \label{eq:SEARD}
 \end{equation}
 
-When we fit the sample data with the SE-ARD kernel we get the hyper-parameters given in Table \ref{table:E_hyper_parameters} case A. The length scales in each input dimension are similar so the model is not making use of the ARD property. The prediction intervals of the model are shown in Figure \ref{fig:E_kernel_compare_1}. 
+When we fit the sample data with the SE-ARD kernel we get the hyper-parameters given in Table \ref{table:E_hyper_parameters} case A. The code to do this is similar to Listing \ref{lst:A}. The length scales in each input dimension are similar so the model is not making use of the ARD property. The prediction intervals of the model are shown in Figure \ref{fig:E_kernel_compare_1}. 
 
 \begin{table*}[h]
     \centering
@@ -266,7 +266,7 @@ When our kernel is the sum of two independent SE-ARD kernels case B we observe t
     \label{fig:E_kernel_compare}
 \end{figure}
 
-Both models have similar prediction intervals in the region of the data. However, the behaviour of the prediction intervals when extrapolating is different. While the first model very quickly returns to the prior prediction interval, the second model keeps smaller prediction intervals in directions parallel to the input axes. This is because in these directions, the "distance" measure to the data in one of the two SE-ARD kernels is small, as the corresponding ARD $\lambda$ is very large. This results in a decrease in the prediction interval from that kernel. 
+Both models have similar prediction intervals in the region of the data. However, the behaviour of the prediction intervals when extrapolating is different. While the case A very quickly returns to the prior prediction interval, the case B keeps smaller prediction intervals in directions parallel to the input axes. This is because in these directions, the "distance" measure to the data in one of the two SE-ARD kernels is small, as the corresponding ARD $\lambda$ is very large. This results in a decrease in the prediction interval from that kernel. 
 
 The model in case B has a higher likelihood than the one in case A however we would argue that the case A model is better in most cases. By observing our dataset, we have not covered enough of the input space to conclude that we can decompose the function into a sum of functions in each input dimension. It would therefore not be appropriate to be confident in the extrapolation behaviour of this model.
 
