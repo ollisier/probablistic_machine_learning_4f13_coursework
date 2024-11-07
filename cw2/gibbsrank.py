@@ -26,11 +26,21 @@ def gibbs_sample(G, M, num_iters):
         # Jointly sample skills given performance differences
         m = np.zeros((M, 1))
         for p in range(M):
-            m[p] =  # TODO: COMPLETE THIS LINE
+            wins = np.array(G[:, 0] == p).astype(int)
+            losses = np.array(G[:, 1] == p).astype(int)
+            m[p] = np.dot(t[:,0], (wins - losses))
+            
         iS = np.zeros((M, M))  # Container for sum of precision matrices (likelihood terms)
 
         for g in range(N):
-            # TODO: Build the iS matrix
+            # Build the iS matrix
+            w = G[g, 0]
+            l = G[g, 1]
+
+            iS[w, w] += 1
+            iS[w, l] -= 1
+            iS[l, w] -= 1
+            iS[l, l] += 1
 
         # Posterior precision matrix
         iSS = iS + np.diag(1. / pv)
