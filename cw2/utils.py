@@ -4,7 +4,7 @@ def load_data():
     # load data
     data = loadmat('cw2/data/tennis_data.mat')
     # Array containing the names of each player
-    W = data['W']
+    W = data['W'][:,0]
     # loop over array to format more nicely
     for i, player in enumerate(W):
         W[i] = player[0]
