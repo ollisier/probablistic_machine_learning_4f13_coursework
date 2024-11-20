@@ -32,7 +32,7 @@ def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills)
     mean_convergence = np.max(np.abs(np.diff(mean_player_skills, axis=1)), axis=0)
     precision_convergence = np.max(np.abs(np.diff(precision_player_skills, axis=1)), axis=0)
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 3.5))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 4))
     
     ax.semilogy(mean_convergence[:500], label='Mean')
     ax.semilogy(precision_convergence[:500], label='Precision')
