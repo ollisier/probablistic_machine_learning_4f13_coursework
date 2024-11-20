@@ -16,7 +16,7 @@ def sorted_barplot(P, W):
     sorted_indices = np.argsort(P)
     sorted_names = W[sorted_indices]
     plt.barh(xx, P[sorted_indices])
-    plt.yticks(np.linspace(0, M, M), labels=sorted_names[:, 0])
+    plt.yticks(np.linspace(0, M, M), labels=sorted_names)
     plt.ylim([-2, 109])
     plt.show()
 

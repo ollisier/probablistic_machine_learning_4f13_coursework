@@ -21,8 +21,8 @@ def eprank(G, M, num_iters):
     lam = lambda x: psi(x) * (psi(x) + x)
 
     # intialize marginal means and precisions
-    Ms = np.zeros(M)
-    Ps = np.zeros(M)
+    Ms = np.zeros((M, num_iters))
+    Ps = np.zeros((M, num_iters))
 
     # initialize matrices of game to skill messages, means and precisions
     Mgs = np.zeros((N, 2))
@@ -36,13 +36,13 @@ def eprank(G, M, num_iters):
         for p in range(M):  # compute marginal player skills
             games_won = np.where(G[:, 0] == p)[0]
             games_lost = np.where(G[:, 1] == p)[0]
-            Ps[p] = 1./pv + np.sum(Pgs[games_won, 0]) + np.sum(Pgs[games_lost, 1])
-            Ms[p] = np.sum(Pgs[games_won, 0] * Mgs[games_won, 0]) / Ps[p] \
-                + np.sum(Pgs[games_lost, 1] * Mgs[games_lost, 1]) / Ps[p]
+            Ps[p, iter] = 1./pv + np.sum(Pgs[games_won, 0]) + np.sum(Pgs[games_lost, 1])
+            Ms[p, iter] = np.sum(Pgs[games_won, 0] * Mgs[games_won, 0]) / Ps[p, iter] \
+                + np.sum(Pgs[games_lost, 1] * Mgs[games_lost, 1]) / Ps[p, iter]
 
         # (2) compute skill to game messages
-        Psg = Ps[G] - Pgs
-        Msg = (Ps[G] * Ms[G] - Pgs * Mgs) / Psg
+        Psg = Ps[G, iter] - Pgs
+        Msg = (Ps[G, iter] * Ms[G, iter] - Pgs * Mgs) / Psg
 
         # (3) compute game to performance messages
         vgt = 1 + np.sum(1. / Psg, axis=1)

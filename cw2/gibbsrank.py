@@ -2,7 +2,6 @@ import scipy.linalg
 import numpy as np
 from tqdm import tqdm
 
-
 def gibbs_sample(G, M, num_iters):
     # number of games
     N = G.shape[0]
@@ -26,9 +25,7 @@ def gibbs_sample(G, M, num_iters):
         # Jointly sample skills given performance differences
         m = np.zeros((M, 1))
         for p in range(M):
-            wins = np.array(G[:, 0] == p).astype(int)
-            losses = np.array(G[:, 1] == p).astype(int)
-            m[p] = np.dot(t[:,0], (wins - losses))
+            m[p] = np.dot(t[:,0], (np.array(G[:, 0] == p).astype(int) - np.array(G[:, 1] == p).astype(int)))
             
         iS = np.zeros((M, M))  # Container for sum of precision matrices (likelihood terms)
 
