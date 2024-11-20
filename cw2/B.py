@@ -1,38 +1,52 @@
-from eprank import eprank
-from utils import load_data
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 
-def main(use_cache=True):
-    # load data
-    W, G, M, N = load_data()
+import numpy as np
+import matplotlib.pyplot as plt
+
+from utils import load_all
 
 
-    cache_file = 'cw2/cache/eprank_samples.npy'
-    if use_cache and os.path.exists(cache_file):
-        mean_player_skills, precision_player_skills = np.load(cache_file)
-        num_iters = mean_player_skills.shape[1]
-    else:
-        num_iters = 20
-        # run message passing algorithm, returns mean and precision for each player
-        mean_player_skills, precision_player_skills = eprank(G, M, num_iters)
-        np.save(cache_file, (mean_player_skills, precision_player_skills))
-
+def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills):
     fig, ax = plt.subplots(2, 1, figsize=(10, 4))
 
-    players = np.arange(5)
-    for i, player in enumerate(players):
-        ax[0].plot(mean_player_skills[player, :], label=f'Player {W[player]}')
-        ax[1].plot(precision_player_skills[player, :], label=f'Player {W[player]}')
+    plot_iters = 40
+
+    players = np.arange(0,5)
+    for player in players:
+        ax[0].plot(mean_player_skills[player, :plot_iters], label=W[player])
+        ax[1].plot(precision_player_skills[player, :plot_iters], label=W[player])
         
+    
+    ax[0].set_ylabel('Player Skill Mean')
+    ax[1].set_ylabel('Player Skill Precision')
+    ax[1].set_xlabel('Iteration')
+    
+    ax[1].legend(loc='lower right', prop={'size': 8})
+    ax[0].grid(True)
+    ax[1].grid(True)
 
-    ax[0].legend()
     fig.tight_layout()
+    plt.legend
+    fig.savefig('cw2/figures/B/samples.pdf')
+    
+    mean_convergence = np.max(np.abs(np.diff(mean_player_skills, axis=1)), axis=0)
+    precision_convergence = np.max(np.abs(np.diff(precision_player_skills, axis=1)), axis=0)
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 3.5))
+    
+    ax.semilogy(mean_convergence[:500], label='Mean')
+    ax.semilogy(precision_convergence[:500], label='Precision')
+    ax.legend()
+    ax.grid(True)
+    ax.set_xlabel('Iteration')
+    ax.set_ylabel('Max Absolute Change')
+    
+    fig.savefig('cw2/figures/B/convergence.pdf')
 
-    fig.savefig('cw2/figures/B/convergence.eps')
-
-    plt.show()
+    
+    
+    
 
 if __name__ == '__main__':
-    main()
+    main(*load_all())
+    plt.show()

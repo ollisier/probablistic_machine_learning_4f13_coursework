@@ -1,87 +1,88 @@
-from utils import load_data
 import numpy as np
-from scipy.stats import norm, multivariate_normal
 import matplotlib.pyplot as plt
+from scipy.stats import norm, multivariate_normal
 
-def main():
-    W, G, M, N = load_data()
+from utils import load_all
+
+
+def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills):
+    gibbs_samples = gibbs_samples[:, 100:]
     
-    cache_file = 'cw2/cache/gibbs_samples.npy'
-    gibbs_samples = np.load(cache_file)
-    gibbs_samples = gibbs_samples[:,10:]
-    
-    p1_name = 'Rafael-Nadal'
-    p2_name = 'Roger-Federer'
+    p1_name = 'Rafael Nadal'
+    p2_name = 'Roger Federer'
     
     p1 = np.where(W == p1_name)[0][0]
     p2 = np.where(W == p2_name)[0][0]
     
-    # Marginals
-    p1_mu = np.mean(gibbs_samples[p1,:])
-    p1_sigma2 = np.var(gibbs_samples[p1,:])
-    p2_mu = np.mean(gibbs_samples[p2,:])
-    p2_sigma2 = np.var(gibbs_samples[p2,:])
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-    x = np.linspace(np.min(gibbs_samples[(p1,p2),:]), np.max(gibbs_samples[(p1,p2),:]), 100)
-    ax.hist(gibbs_samples[p1,:], bins=20, alpha=0.5, density=True, color='r')
-    ax.hist(gibbs_samples[p2,:], bins=20, alpha=0.5, density=True, color='b')
-    ax.plot(x, norm.pdf(x, p1_mu, np.sqrt(p1_sigma2)), color='r')
-    ax.plot(x, norm.pdf(x, p2_mu, np.sqrt(p2_sigma2)), color='b')
-    ax.legend([p1_name, p2_name])
-    ax.grid(True)
+    # Gaussian Approximation
+    mu = np.mean(gibbs_samples[(p1, p2),:], axis=1)
+    cov = np.cov(gibbs_samples[(p1, p2),:])
     
-    fig.savefig('cw2/figures/D/marginals.pdf')
+    print(f'Gaussian Approximation: \n mu = {mu} \n cov = {cov}')
     
-    P_s = norm.cdf((p1_mu - p2_mu)/np.sqrt(p1_sigma2 + p2_sigma2))
-    print(P_s)
+    ## Marginals
+    P_s = norm.cdf((mu[0] - mu[1])/np.sqrt(cov[0,0] + cov[1,1]))
+    print(f'Gaussian Marginals P(Nadal > Federer) = {P_s}')
     
-    # Joint
-    joint_mu = np.array([p1_mu, p2_mu])
-    joint_sigma2 = np.cov(gibbs_samples[np.array([p1, p2]),:])
+    ## Joint
+    A = np.array([[1, -1]])
+    P_s = norm.cdf((A@mu)/np.sqrt((A@cov@A.T)))
+    print(f'Gaussian Joint P(Nadal > Federer) = {P_s}')
     
-    print(joint_sigma2)
+    ## Plotting
+    fig = plt.figure(figsize=(5, 5))
     
-    mu = joint_mu[0] - joint_mu[1]
-    sigma2 = joint_sigma2[0,0] + joint_sigma2[1,1] - 2*joint_sigma2[0,1]
+    gs = fig.add_gridspec(2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
+                      left=0.1, right=0.9, bottom=0.1, top=0.9,
+                      wspace=0, hspace=0)
     
-    P_s = norm.cdf(mu/np.sqrt(sigma2))
-    print(P_s)
+    x1 = np.linspace(np.min(gibbs_samples[p1,:]), np.max(gibbs_samples[p1,:]), 1000)
+    x2 = np.linspace(np.min(gibbs_samples[p2,:]), np.max(gibbs_samples[p2,:]), 1000)
+    X1, X2 = np.meshgrid(x1, x2)
+    X = np.dstack((X1, X2))
     
-    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-    
-    x1, x2 = np.meshgrid(np.linspace(np.min(gibbs_samples[p1,:]), np.max(gibbs_samples[p1,:]), 100), np.linspace(np.min(gibbs_samples[p2,:]), np.max(gibbs_samples[p2,:]), 100))
-    x = np.dstack((x1, x2))
-    ax.hist2d(gibbs_samples[p1,:], gibbs_samples[p2,:], bins=20, density=True, alpha=0.5, label='Sample Histogram')
-    ax.contour(x1, x2, multivariate_normal.pdf(x, joint_mu, joint_sigma2), label='Gaussian Fit')
-    ax.plot(x1[(0,-1),(0,-1)], x1[(0,-1),(0,-1)], linestyle='--', color='k', label='w_{Nadal}=w_{Federer}')
+    ax = fig.add_subplot(gs[1, 0])
+    ax.hist2d(gibbs_samples[p1,:], gibbs_samples[p2,:], bins=20, density=True, alpha=0.5)
+    ax.contour(X1, X2, multivariate_normal.pdf(X, mu, cov))
+    ax.plot(x1, x1, linestyle='--', color='k', label='$w_{Nadal}=w_{Federer}$')
     ax.legend()
     
-    ax.set_xlabel(p1_name)
-    ax.set_ylabel(p2_name)
+    ax_histx = fig.add_subplot(gs[0, 0], sharex=ax)
+    ax_histx.hist(gibbs_samples[p1,:], bins=20, alpha=0.5, density=True, color='r')
+    ax_histx.plot(x1, norm.pdf(x1, mu[0], np.sqrt(cov[0,0])), color='r')
+    ax_histx.axis('off')
     
+    ax_histy = fig.add_subplot(gs[1, 1], sharey=ax)
+    ax_histy.hist(gibbs_samples[p2,:], bins=20, alpha=0.5, density=True, color='b', orientation="horizontal")
+    ax_histy.plot(norm.pdf(x2, mu[1], np.sqrt(cov[1,1])), x2, color='b')
+    ax_histy.axis('off')
+
+    ax.set_xlabel(f'{p1_name} Skill')
+    ax.set_ylabel(f'{p2_name} Skill')
     ax.set_aspect('equal', 'box')
     
     fig.savefig('cw2/figures/D/joint.pdf')
     
     # Samples
-
     s_samples = gibbs_samples[p1,:] - gibbs_samples[p2,:]
     P_s = np.mean(s_samples > 0)
     
-    print(P_s)
+    print(f'Samples P(Nadal > Federer) = {P_s}')
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+    # Joint Ranking
+    player_names = ['Novak Djokovic', 'Rafael Nadal', 'Roger Federer', 'Andy Murray']
+    players = np.array([np.where(W == name) for name in player_names])[:,0,0]
+    P_s = np.zeros((len(players), len(players)))
     
-    
-    x = np.linspace(np.min(s_samples), np.max(s_samples), 100)
-    ax.hist(s_samples, bins=20, alpha=0.5, density=True)
-    ax.plot(x, norm.pdf(x, mu, np.sqrt(sigma2)))
-    print(p1_mu, p2_mu)
-    
-    plt.show()
-    
+    for i, p1 in enumerate(players):
+        for j, p2 in enumerate(players):
+            P_s[i,j] = np.mean(gibbs_samples[p1,:] > gibbs_samples[p2,:])
+        
+    print(player_names)
+    print('P(s>0):')
+    print(P_s.round(2))
 
-    
 if __name__ == '__main__':
-    main()
+    main(*load_all())
+    plt.show()

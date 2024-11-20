@@ -1,18 +1,14 @@
 import numpy as np
-from utils import load_data
-from itertools import product
 from scipy.stats import norm
 
-def main():
-    
-    W, G, M, N = load_data()
-    
-    cache_file = 'cw2/cache/eprank_samples.npy'
-    mean_player_skills, precision_player_skills = np.load(cache_file)
+from utils import load_all
+
+
+def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills):
     mean_player_skills = mean_player_skills[:,-1]
     precision_player_skills = precision_player_skills[:,-1]
     
-    player_names = ['Novak-Djokovic', 'Rafael-Nadal', 'Roger-Federer', 'Andy-Murray']
+    player_names = ['Novak Djokovic', 'Rafael Nadal', 'Roger Federer', 'Andy Murray']
     players = np.array([np.where(W == name) for name in player_names])[:,0,0]
     
     skill_mu = mean_player_skills[players]
@@ -28,11 +24,11 @@ def main():
     P_t = norm.cdf(t_mu/np.sqrt(t_sigma2))
     
     print(player_names)
+    print('P(s>0):')
     print(P_s.round(2))
+    print('P(t>0):')
     print(P_t.round(2))
     
     
-
 if __name__ == '__main__':
-    main()
-    
+    main(*load_all())    
