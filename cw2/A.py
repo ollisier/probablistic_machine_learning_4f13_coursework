@@ -47,9 +47,11 @@ def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills)
     
     ax.plot(np.mean(gibbs_samples[:, :50], axis=0), label='Skill Population Mean', color='tab:blue')
     ax.grid(True)
+    ax.set_ylabel('Mean')
 
     ax_right = ax.twinx()
-    ax_right.plot(np.std(gibbs_samples[:, :50], axis=0), label='Skill Population Variance', color='tab:orange')
+    ax_right.plot(np.var(gibbs_samples[:, :50], axis=0), label='Skill Population Variance', color='tab:orange')
+    ax_right.set_ylabel('Variance')
     ax.set_xlabel('Iteration')
     lines, labels = ax.get_legend_handles_labels()
     lines2, labels2 = ax_right.get_legend_handles_labels()

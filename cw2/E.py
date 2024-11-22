@@ -43,8 +43,10 @@ def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills)
     ax.scatter(xx-1/3, winrate_mu[sorted_idx], marker='x', color='g', label='Winrate')
     
     ax.set_xticks(xx, labels=W[sorted_idx], rotation=90)
-    ax.set_ylabel('Skill')
-    ax.legend(loc='upper left')
+    ax.set_ylabel('Skill', fontsize=18)
+    ax.legend(loc='upper left', prop={'size': 18})
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label1.set_fontsize(16)
     ax.grid(True)
     ax.set_xlim(-1, M)
     fig.tight_layout()

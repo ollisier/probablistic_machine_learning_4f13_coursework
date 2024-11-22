@@ -31,6 +31,14 @@
 
 \section{Task A}
 
+\begin{lstlisting}[caption=Python calculation of mean and covariance matrix of skills given performances for Gibbs sampling., label=lst:A, captionpos=b, basicstyle=\small, frame=tlrb, language=Python]
+for p in range(M):
+    m[p] = np.dot(t[:,0], 1*(G[:,0] == p)-1*(G[:,1] == p))
+for g in range(N):
+    w = G[g, 0]; l = G[g, 1]
+    iS[w, w] += 1; iS[w, l] -= 1; iS[l, w] -= 1; iS[l, l] += 1
+\end{lstlisting}
+
 Figure \ref{fig:A_skill_samples} shows samples of the skills at each Gibbs iteration for 3 players. We see that at each iteration the sampled skill of each player appears random but perhaps not independent of the previous iteration. This is expected from an MCMC method like Gibbs sampling and shown better by the auto covariance plot in Figure \ref{fig:A_auto_covariance}. 
 
 \begin{figure}[h]
@@ -59,7 +67,6 @@ The convergence of the skill population is shown in Figure \ref{fig:A_convergenc
 \end{figure}
 
 To estimate how many iterations we need to run the Gibbs sampler to get skill estimates within a certain tolerance we can analyse the variance of our Monte Carlo skill estimates. Equation \ref{eq:gibbs_skill_variance} calculates the variance of the Gibbs skill estimate, $\bar{w_i}$, for player $i$ after $N$ iterations. The variance depends on the sum of the auto covariance, $\frac{\sigma_i^{(t)2}}{\text{Var}(w_i)}$, and is inversely proportional to N. We compute the average of this variance increase term over all players from the data in Figure \ref{fig:A_auto_covariance} and find a variance increase factor of 4. From these calculation we find that in order to achieve a skill estimate variance $10^{-3}$ smaller than our posterior skill variance we must run our Gibbs sampler for 4000 iterations.
-
 \begin{equation}
     \begin{split}
     \text{Var}(\bar{w_i}) &= \frac{1}{N} \text{Var}(\sum_{n=1}^{N} w_i^{(n)}) = \frac{\text{Var}(w_i)}{N} (1 + 2 \sum_{t=1}^{N-1} (1-\frac{t}{N}) \frac{\sigma_i^{(t)2}}{\text{Var}(w_i)}) \\
@@ -83,7 +90,6 @@ Convergence is not the only factor in considering the computational complexity o
 In the Gibbs sampling approach we are sampling from a Markov chain with stationary distribution $p(\mathbf{w}|\mathbf{y})$ and we wish to compute expectations of the form $\mathbb{E}_{\mathbf{w} \sim p(\mathbf{w}|\mathbf{y})}[f(\mathbf{w})]$. The distribution of our samples must first converge to the stationary distribution, the burn-in period, and then our expectation estimate needs to converge too. From the previous section we know that the variance of the expectation is proportional to $N^{-1}$.
 
 With message passing we are converging to a stable graph with the distribution of variables at the nodes being approximated by Gaussians. We can say that the graph has converged within a tolerance $\epsilon$ at iteration $n$ when the absolute change of all marginal parameters between iterations are less than $\epsilon$. Equation \ref{eq:B_convergence} formalises this with $m_i^{(n)}$ and $p_i^{(n)}$ being the estimated mean and precision of player $i$ at iteration $n$.
-
 \begin{equation}
     |m_j^{(n)} - m_i^{(n-1)}| < \epsilon \quad \text{and} \quad \max_{i} |p_i^{(n)} - p_i^{(n-1)}| < \epsilon \quad \forall i
     \label{eq:B_convergence}
@@ -101,7 +107,6 @@ We plot the largest absolute change between iterations for each parameter in Fig
 \section{Task C}
 
 Using the skill parameters estimated by the EP algorithm we denote the skill of player $i$ as $w_i \sim \mathcal{N}(m_i, p_i^{-1})$, with $m_i$ and $p_i$ being the mean and precision for player $i$. The distributions of the skill difference, $s_{ij} = w_i - w_j$, and performance difference, $t_{ij} = s_{ij} + \eta : \eta \sim \mathcal{N}(0, 1)$, between player $i$ and $j$ are given in Equation \ref{eq:skill_performance_diff}. These are simple to compute under the assumption that $w_i$, $w_j$ and $\eta$ are independent.
-
 \begin{equation}
 \begin{split}
     s_{ij} &\sim \mathcal{N}(m_i - m_j, p_i^{-1} + p_j^{-1}) \\
@@ -186,7 +191,6 @@ We can also approximate the joint skill distribution with a Gaussian by computin
 
 \subsection{Use the samples directly}
 We can also compute a Monte Carlo estimate of $P(w_{Nadal} > w_{Federer})$. This estimate is given in Equation \ref{eq:D_monte_carlo} where $(w_{i}^{(n)}, w_{j}^{(n)})$ are samples from a Markov chain with stationary distribution $p(w_{i}, w_{j})$. Our Gibbs samples satisfy this condition and we find $P(w_{Nadal} > w_{Federer}) = 0.431$.
-
 \begin{equation}
     \text{P}(w_{i} > w_{j}) = \int \mathbbm{1}(w_{i} > w_{j}) p(w_{i}, w_{j}) dw_{i} dw_{j} \approx \frac{1}{N} \sum_{n=1}^{N} \mathbbm{1}(w_{i}^{(n)} > w_{j}^{(n)})
     \label{eq:D_monte_carlo}
@@ -218,8 +222,8 @@ We notice that the probabilities in Table \ref{tbl:D_skill_difference} are very 
 \section{Task E}
 
 We have explored methods for skill estimation using both Gibbs sampling and EP algorithms. A simpler model for estimating skill is to assume every player has a fixed win rate $r_i$. The posterior distribution of $r_i$ for a player, $i$, who wins $k_i$ out of $n_i$ matches with a uniform prior, $r_i \sim \text{U}(0,1)$, is the Beta distribution given in Equation \ref{eq:E_win_rate_posterior}. Also given in Equation \ref{eq:E_win_rate_posterior} are the formulas for the posterior mean and variance. Skill, in this model, is a linear transformation of win rate where $w_i = \sqrt{12}(r_i - 0.5)$. This transformation means the skill prior has zero mean and unit variance for easier model comparison.
-
 \begin{equation}
+    \small
     \begin{split}
         r_i|k_k,n_i &\sim \text{Beta}(1+k_i, 1+n_i-k_i) \\
         \text{E}(r_i|k_i,n_i) = \frac{1+k_i}{2+n_i} &\quad \text{Var}(r_i|k_i,n_i) = \frac{(1+k_i)(1+n_i-k_i)}{(2+n_i)^2(3+n_i)}
@@ -229,13 +233,13 @@ We have explored methods for skill estimation using both Gibbs sampling and EP a
 
 We show the posterior skill mean and one standard deviation error bars for all players from each model in Figure \ref{fig:E_ranking}. This again shows, as discussed at the end of Task D, that the message passing model achieves similar results to the Gibbs sampler with much faster convergence. 
 
-The win rate model ranks the players similarly to the other models while having linear time complexity in the number of players. However, there are a few major drawbacks; the model does not take into account the skill of the opponent and the model breaks down for players with few matches. These weaknesses are clear in Figure \ref{fig:E_ranking} where some players, who have played few matches and lost them all, have the same minimum possible skill with 0 variance. Andy Murray is an example of a top player who is ranked differently by the win rate model, being ranked above Roger Federer, this is because on average his matches have been against lower ranked players. 
-
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{E/ranking}
     \caption{Posterior skill mean and one standard deviation error bars for all players from each model.}
     \label{fig:E_ranking}
 \end{figure}
+
+The win rate model ranks the players similarly to the other models while having linear time complexity in the number of players. However, it has a major weakness, the skill of the opponents in each game does not factor into the skill calculation. The model could therefore be exploited by playing many games against lower ranked players to boost ones ranking. Andy Murray is an example of a top player who is ranked differently by the win rate model, being ranked above Roger Federer, because although he has a higher win rate, on average his matches have been against lower ranked players. 
 
 \end{document}
