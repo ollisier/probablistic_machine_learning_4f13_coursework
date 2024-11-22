@@ -23,8 +23,8 @@ def main(W, G, M, N, gibbs_samples, mean_player_skills, precision_player_skills)
         n[G[i,0]] += 1
         n[G[i,1]] += 1
         
-    winrate_mu = np.sqrt(12)*(k/n - 0.5)
-    winrate_sigma = np.sqrt(12*k*(n-k)/n**3)
+    winrate_mu = np.sqrt(12)*(((1+k)/(2+n)) - 0.5)
+    winrate_sigma = np.sqrt(12*(1+k)*(1+n-k)/((2+n)**2*(3+n)))
 
     
     # Plotting

@@ -3,7 +3,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{siunitx}
-\usepackage[a4paper, total={6in, 10in}]{geometry}
+\usepackage[a4paper, total={6in, 10.5in}]{geometry}
 \usepackage{titling}
 \usepackage{listings}
 \usepackage{float}
@@ -11,7 +11,6 @@
 \usepackage{pdfpages}
 \usepackage{bbm}
 \usepackage{amsfonts}
-
 
 \graphicspath{{figures/}}
 \title{\vspace{-2cm}4F13 Coursework 2 - Probabilistic Ranking}
@@ -24,7 +23,7 @@
 
 \begin{document}
 
-% \includepdf[pages={1}]{coversheet}
+\includepdf[pages={1}]{coversheet}
 
 \setcounter{page}{1}
 
@@ -50,7 +49,7 @@ If the samples at each iteration were independent we would expect the auto covar
     \label{fig:A_auto_covariance}
 \end{figure}
 
-The convergence of the skill population is shown in Figure \ref{fig:A_convergence}. We see that there is no clear burn in time for the population mean but the standard deviation takes about 5 iterations to enter the high probability region. This makes sense from our auto covariance analysis as we concluded samples 10 iterations apart are roughly independent so the burn in time should be no more than 10 iterations. For any further we will discard the first 100 Gibbs iterations as burn in time to be sure.
+The convergence of the skill population is shown in Figure \ref{fig:A_convergence}. We see that there is no clear burn in time for the population mean but the standard deviation takes about 5 iterations to enter the high probability region. This makes sense from our auto covariance analysis as we concluded samples 10 iterations apart are roughly independent so the burn in time should be no more than 10 iterations. For any further analysis we will discard the first 100 Gibbs iterations as burn in time to be sure.
 
 \begin{figure}[h]
     \centering
@@ -59,7 +58,7 @@ The convergence of the skill population is shown in Figure \ref{fig:A_convergenc
     \label{fig:A_convergence}
 \end{figure}
 
-To estimate how many iterations we need to run the Gibbs sampler to get skill estimates within a certain tolerance we can analyse the variance of our Monte Carlo skill estimates. Equation \ref{eq:gibbs_skill_variance} calculates the variance of the Gibbs skill estimate, $\bar{w_i}$, for player $i$ after $N$ iterations. The variance depends on the sum of the auto covariance, $\frac{\sigma_i^{(t)2}}{\text{Var}(w_i)}$ and is inversely proportional to N. We compute the average of this variance increase term over all players from the data in Figure \ref{fig:A_auto_covariance} and find a variance increase factor of 4. From these calculation we find that in order to achieve a skill estimate variance $10^{-3}$ smaller than our posterior skill variance we must run our Gibbs sampler for 4000 iterations.
+To estimate how many iterations we need to run the Gibbs sampler to get skill estimates within a certain tolerance we can analyse the variance of our Monte Carlo skill estimates. Equation \ref{eq:gibbs_skill_variance} calculates the variance of the Gibbs skill estimate, $\bar{w_i}$, for player $i$ after $N$ iterations. The variance depends on the sum of the auto covariance, $\frac{\sigma_i^{(t)2}}{\text{Var}(w_i)}$, and is inversely proportional to N. We compute the average of this variance increase term over all players from the data in Figure \ref{fig:A_auto_covariance} and find a variance increase factor of 4. From these calculation we find that in order to achieve a skill estimate variance $10^{-3}$ smaller than our posterior skill variance we must run our Gibbs sampler for 4000 iterations.
 
 \begin{equation}
     \begin{split}
@@ -68,6 +67,16 @@ To estimate how many iterations we need to run the Gibbs sampler to get skill es
     \end{split}
     \label{eq:gibbs_skill_variance}
 \end{equation}
+
+Convergence is not the only factor in considering the computational complexity of the Gibbs sampler, we must also consider the complexity of each iteration. There are three main computations each iteration, the mean vector, the covariance matrix and its Cholesky decomposition. If we denote the number of players as $M$ and the number of games as $G$ then the total complexity is $\mathcal{O}(M^3 + MG)$ with the following breakdown.
+
+\begin{itemize}
+    \itemsep0em 
+    \item Mean vector $\mathcal{O}(MG)$: $M$ dot products of length $G$.
+    \item Covariance matrix $\mathcal{O}(G)$: $G$ iterations to populate the matrix.
+    \item Cholesky decomposition $\mathcal{O}(M^3)$: Covariance matrix is $M \times M$.
+\end{itemize}
+
 
 \section{Task B}
 
@@ -80,7 +89,7 @@ With message passing we are converging to a stable graph with the distribution o
     \label{eq:B_convergence}
 \end{equation}
 
-We plot the largest absolute change between iterations for each parameter in Figure \ref{eq:B_convergence}. By inspection of Figure \ref{eq:B_convergence} we notice that convergence is exponential and we achieve a tolerance of machine precision within 300 iterations. This is much faster than the Gibbs sampler where $\epsilon \propto \sqrt{\text{Var}(\bar{w_i})} \propto N^{-0.5}$.
+We plot the largest absolute change between iterations for each parameter in Figure \ref{fig:B_convergence}. By inspection of Figure \ref{fig:B_convergence} we notice that convergence is exponential and we achieve a tolerance of machine precision within 300 iterations. This is much faster than the Gibbs sampler where $\epsilon \propto \sqrt{\text{Var}(\bar{w_i})} \propto N^{-0.5}$.
 
 \begin{figure}[h]
     \centering
@@ -176,7 +185,7 @@ We can also approximate the joint skill distribution with a Gaussian by computin
 \end{figure}
 
 \subsection{Use the samples directly}
-We can also compute a Monte Carlo estimate of $P(w_{Nadal} > w_{Federer})$. This estimate is given in Equation \ref{eq:D_monte_carlo} where $(w_{i}^{(n)}, w_{j}^{(n)})$ are samples from a Markov chain with stationary distribution $p(w_{i}, w_{j})$. Our Gibbs samples satisfy this condition and we find $P(w_{Nadal} > w_{Federer}) = 0.395$.
+We can also compute a Monte Carlo estimate of $P(w_{Nadal} > w_{Federer})$. This estimate is given in Equation \ref{eq:D_monte_carlo} where $(w_{i}^{(n)}, w_{j}^{(n)})$ are samples from a Markov chain with stationary distribution $p(w_{i}, w_{j})$. Our Gibbs samples satisfy this condition and we find $P(w_{Nadal} > w_{Federer}) = 0.431$.
 
 \begin{equation}
     \text{P}(w_{i} > w_{j}) = \int \mathbbm{1}(w_{i} > w_{j}) p(w_{i}, w_{j}) dw_{i} dw_{j} \approx \frac{1}{N} \sum_{n=1}^{N} \mathbbm{1}(w_{i}^{(n)} > w_{j}^{(n)})
@@ -202,22 +211,25 @@ We can also compute a Monte Carlo estimate of $P(w_{Nadal} > w_{Federer})$. This
 \end{table}
 
 \subsection{Comparison}
-The skill posterior is not necessarily Gaussian, therefore, computing $\text{P}(w_{i} > w_{j})$ with the Monte Carlo method is the only unbiased method. However, the posterior distribution does look very close to being Gaussian and the Gaussian approximation is a good. Estimating $\text{P}(w_{i} > w_{j})$ with the marginal approximation is far more computationally efficient when comparing a large number of players as we only need to compute a single sum for each player.
+The skill posterior is not necessarily Gaussian, therefore, computing $\text{P}(w_{i} > w_{j})$ with the Monte Carlo method is the only unbiased method. However, as observed the Gaussian approximation is close. Estimating $\text{P}(w_{i} > w_{j})$ with the marginal approximation has $\mathcal{O}(M)$ complexity compared to $\mathcal{O}(M^2)$ for the joint approximation and direct method where we must compute sums for all pairs of players. Therefore, when comparing a large number of players the small decrease in accuracy of the marginal approximation may be acceptable. As we are only comparing 4 players we will use the direct method for its superior accuracy.
 
-We notice that the probabilities in Table \ref{tbl:D_skill_difference} are very similar to those in Table \ref{tbl:B_skill_difference}. This makes sense as the message passing algorithm approximates the posterior as a Gaussian and the Gibbs samples show this is a accurate. The message passing EP algorithm achieves the same performance as marginal Gibbs method but with much faster convergence.
+We notice that the probabilities in Table \ref{tbl:D_skill_difference} are very similar to those in Table \ref{tbl:B_skill_difference}. This makes sense as the message passing algorithm approximates the posterior as a Gaussian and the Gibbs samples show this is accurate. The message passing EP algorithm achieves the same performance as marginal Gibbs method but with much faster convergence.
 
 \section{Task E}
 
-We have explored methods for skill estimation using both Gibbs sampling and EP algorithms. A simpler model for estimating skill is to assume every player has a fixed win rate $r_i$. The posterior distribution of $r$ for a player who wins $k$ out of $n$ matches with a uniform prior, $r \sim \text{U}(0,1)$, is the Beta distribution given in Equation \ref{eq:E_win_rate_posterior}. We can apply the central limit theorem to approximate this posterior with a Gaussian for large $n$. Skill, in this model, is a linear transformation of win rate where $w_i = \sqrt{12}(r_i - 0.5)$. This transformation allows gives means the skill prior has zero mean and unit variance for easier model comparison.
+We have explored methods for skill estimation using both Gibbs sampling and EP algorithms. A simpler model for estimating skill is to assume every player has a fixed win rate $r_i$. The posterior distribution of $r_i$ for a player, $i$, who wins $k_i$ out of $n_i$ matches with a uniform prior, $r_i \sim \text{U}(0,1)$, is the Beta distribution given in Equation \ref{eq:E_win_rate_posterior}. Also given in Equation \ref{eq:E_win_rate_posterior} are the formulas for the posterior mean and variance. Skill, in this model, is a linear transformation of win rate where $w_i = \sqrt{12}(r_i - 0.5)$. This transformation means the skill prior has zero mean and unit variance for easier model comparison.
 
 \begin{equation}
-    r|k,n \sim \text{Beta}(1+k, 1+n-k) \approx \mathcal{N}(\frac{k}{n}, \frac{k(n-k)}{n^3})
+    \begin{split}
+        r_i|k_k,n_i &\sim \text{Beta}(1+k_i, 1+n_i-k_i) \\
+        \text{E}(r_i|k_i,n_i) = \frac{1+k_i}{2+n_i} &\quad \text{Var}(r_i|k_i,n_i) = \frac{(1+k_i)(1+n_i-k_i)}{(2+n_i)^2(3+n_i)}
+    \end{split}
     \label{eq:E_win_rate_posterior}
 \end{equation}
 
-We show the posterior skill mean and 1 standard deviation error bars for all players from each model in Figure \ref{fig:E_ranking}. This again shows, as discussed at the end of Task D, that the message passing model achieves similar results to the Gibbs sampler with much faster convergence. 
+We show the posterior skill mean and one standard deviation error bars for all players from each model in Figure \ref{fig:E_ranking}. This again shows, as discussed at the end of Task D, that the message passing model achieves similar results to the Gibbs sampler with much faster convergence. 
 
-The win rate model ranks the players similarly the other models while having linear time complexity in the number of players. However, there are a few major drawbacks; the model does not take into account the skill of the opponent and the model breaks down for players with few matches. These weaknesses are clear in Figure \ref{fig:E_ranking} where some players, who have played few matches and lost them all, have the same minimum possible skill with 0 variance. Andy Murray is an example of a top player who how is ranked differently by the win rate model, being ranked above Roger Federer, this is because on average his matches have been against lower ranked players. 
+The win rate model ranks the players similarly to the other models while having linear time complexity in the number of players. However, there are a few major drawbacks; the model does not take into account the skill of the opponent and the model breaks down for players with few matches. These weaknesses are clear in Figure \ref{fig:E_ranking} where some players, who have played few matches and lost them all, have the same minimum possible skill with 0 variance. Andy Murray is an example of a top player who is ranked differently by the win rate model, being ranked above Roger Federer, this is because on average his matches have been against lower ranked players. 
 
 \begin{figure}
     \centering
