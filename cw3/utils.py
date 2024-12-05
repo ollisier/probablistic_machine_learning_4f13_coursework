@@ -14,6 +14,16 @@ def load_data():
     
     return A, B, V
 
+def compute_word_counts(A, V):
+    M = V.shape[0]
+    
+    k = np.zeros(M)
+    
+    for i in range(A.shape[0]):
+        k[A[i,1]-1] += A[i,2]
+        
+    return k, M
+
 # def generate_gibbs_samples(W, G, M, N, cache_file, num_iters):    
 #     # perform gibbs sampling, skill samples is an num_players x num_samples array
 #     skill_samples = gibbs_sample(G, M, num_iters)

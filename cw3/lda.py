@@ -2,8 +2,9 @@ import scipy.io as sio
 import numpy as np
 from scipy.sparse import coo_matrix as sparse
 from sampleDiscrete import sampleDiscrete
+from tqdm import tqdm
 
-def LDA(A, B, K, alpha, gamma):
+def LDA(A, B, K, T, alpha, gamma):
 
     """
     Latent Dirichlet Allocation
@@ -23,8 +24,8 @@ def LDA(A, B, K, alpha, gamma):
     Swd = sparse((B[:, 2], (B[:, 1]-1, B[:, 0]-1))).tocsr()
 
     # Initialization
-    skd = np.zeros((K, D))  # count of word assignments to topics for document d
-    swk = np.zeros((W, K))  # unique word topic assignment counts across all documents
+    skd = np.zeros((T+1, K, D))  # count of word assignments to topics for document d
+    swk = np.zeros((T+1, W, K))  # unique word topic assignment counts across all documents
 
     s = []  # each element of the list corresponds to a document
     r = 0
@@ -37,14 +38,15 @@ def LDA(A, B, K, alpha, gamma):
                 k = np.floor(K*np.random.rand())
                 z[w, int(k)] += 1
                 r += 1
-        skd[:, d] = np.sum(z, axis=0)  # number of words in doc d assigned to each topic
-        swk += z  # unique word topic assignment counts across all documents
+        skd[0, :, d] = np.sum(z, axis=0)  # number of words in doc d assigned to each topic
+        swk[0, :, :] += z  # unique word topic assignment counts across all documents
         s.append(sparse(z))  # sparse representation: z contains many zero entries
 
-    sk = np.sum(skd, axis=1)  # word to topic assignment counts accross all documents
+    sk = np.sum(skd[0, :, :], axis=1)  # word to topic assignment counts accross all documents
     # This makes a number of Gibbs sampling sweeps through all docs and words, it may take a bit to run
-    num_gibbs_iters = 10
-    for iter in range(num_gibbs_iters):
+    for iter in tqdm(range(T)):
+        swk[iter+1, :, :] = swk[iter, :, :]
+        skd[iter+1, :, :] = skd[iter, :, :]
         for d in range(D):
             z = s[d].todense()  # unique word topic assigmnet counts for document d
             words_in_doc_d = A[np.where(A[:, 0] == d + 1), 1][0] - 1
@@ -56,16 +58,16 @@ def LDA(A, B, K, alpha, gamma):
                     k = int(k)
                     for i in range(int(a[0, k])):  # loop over counts for topic k
                         z[w, k] -= 1  # remove word from count matrices
-                        swk[w, k] -= 1
+                        swk[iter+1, w, k] -= 1
                         sk[k] -= 1
-                        skd[k, d] -= 1
-                        b = (alpha + skd[:, d]) * (gamma + swk[w, :]) \
+                        skd[iter+1, k, d] -= 1
+                        b = (alpha + skd[iter+1, :, d]) * (gamma + swk[iter+1, w, :]) \
                             / (W * gamma + sk)
                         kk = sampleDiscrete(b, np.random.rand())  # Gibbs sample new topic assignment
                         z[w, kk] += 1  # add word with new topic to count matrices
-                        swk[w, kk] += 1
+                        swk[iter+1, w, kk] += 1
                         sk[kk] += 1
-                        skd[kk, d] += 1
+                        skd[iter+1, kk, d] += 1
 
             s[d] = sparse(z)  # store back into sparse structure
 
@@ -86,8 +88,7 @@ def LDA(A, B, K, alpha, gamma):
 
         Skd = np.sum(z, axis=0)
         # perform some iterations of Gibbs sampling for test document d
-        num_gibbs_iters = 10
-        for iters in range(num_gibbs_iters):
+        for iters in range(T):
             for w in words_in_d:  # w are the words in doc d
                 a = z[w, :].copy()  # number of times word w is assigned to each topic in doc d
                 indices = np.where(a > 0)[0]   # topics with non-zero word counts for word w in doc d
@@ -97,13 +98,13 @@ def LDA(A, B, K, alpha, gamma):
                     for i in range(int(a[k])):
                         z[w, k] -= 1  # remove word from count matrix for doc d
                         Skd[k] -= 1
-                        b = (alpha + Skd) * (gamma + swk[w, :]) \
+                        b = (alpha + Skd) * (gamma + swk[-1, w, :]) \
                             / (W * gamma + sk)
                         kk = sampleDiscrete(b, np.random.rand())
                         z[w, kk] += 1  # add word with new topic to count matrix for doc d
                         Skd[kk] += 1
         b1 = ((alpha + Skd) / np.sum(alpha + Skd))[:, None]
-        b2 = (gamma + swk) / (W * gamma + sk)
+        b2 = (gamma + swk[-1, :, :]) / (W * gamma + sk)
         b = np.matmul(b2,b1)
         words_and_counts = B[np.where(B[:, 0] == d), 1:][0]
         lp += np.dot(np.log(b[words_and_counts[:, 0]-1]).T, words_and_counts[:, 1])  # log probability, doc d
@@ -111,7 +112,7 @@ def LDA(A, B, K, alpha, gamma):
 
     perplexity = np.exp(-lp/nd)  # perplexity
 
-    return perplexity, swk
+    return perplexity, swk, skd
 
 
 if __name__ == '__main__':

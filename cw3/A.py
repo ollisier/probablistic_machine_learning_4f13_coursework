@@ -2,19 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import factorial
 
-from utils import load_all
+from utils import load_all, compute_word_counts
 
 def main(A, B, V):
-    M = V.shape[0]
-    
-    counts = np.zeros(M)
-    
-    for i in range(A.shape[0]):
-        counts[A[i,1]-1] += A[i,2]
-        
-    N = np.sum(counts)
-    
-    ML_multinomial = counts / N
+    k, M = compute_word_counts(A, V)
+    N = np.sum(k)
+
+    ML_multinomial = k / N
     
     top_indices = np.argsort(ML_multinomial)
     
@@ -23,21 +17,19 @@ def main(A, B, V):
     
     print(f'{top_words[-1]} - {np.log(top_probs[-1])}')
     
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(6, 4))
     ax.barh(top_words[-20:], top_probs[-20:], color='blue')
-    ax.set_xlabel('Words')
-    ax.set_ylabel('Probability')
-    ax.set_title('Top 10 Most Likely Words')
+    ax.set_ylabel('Words')
+    ax.set_xlabel('Probability')
     fig.tight_layout()
-    fig.savefig('cw3/figures/A/most_likely.png')
+    fig.savefig('cw3/figures/A/most_likely.pdf')
     
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(6, 4))
     ax.barh(top_words[:20], top_probs[:20], color='blue')
-    ax.set_xlabel('Words')
-    ax.set_ylabel('Probability')
-    ax.set_title('Top 10 Most Likely Words')
+    ax.set_ylabel('Words')
+    ax.set_xlabel('Probability')
     fig.tight_layout()
-    fig.savefig('cw3/figures/A/least_likely.png')
+    fig.savefig('cw3/figures/A/least_likely.pdf')
     
     
 if __name__ == '__main__':

@@ -1,9 +1,10 @@
 from sampleDiscrete import sampleDiscrete
 import scipy.io as sio
 import numpy as np
+from tqdm import tqdm
 
 
-def BMM(A, B, K, alpha, gamma):
+def BMM(A, B, K, T, alpha, gamma):
 
     """
 
@@ -20,7 +21,7 @@ def BMM(A, B, K, alpha, gamma):
     # Initialization: assign each document a mixture component at random
     sd = np.floor(K * np.random.rand(D)).astype(int)   # mixture component assignment
     swk = np.zeros((W, K))  # K multinomials over W unique words
-    sk_docs = np.zeros((K, 1), dtype=int)  # number of documents assigned to each mixture
+    sk_docs = np.zeros((T+1, K), dtype=int)  # number of documents assigned to each mixture
     # Populate the count matrices by looping over documents
     for d in range(D):
         training_documents = np.where(A[:, 0] == d+1)  # get all occurrences of document d in the training data
@@ -28,13 +29,13 @@ def BMM(A, B, K, alpha, gamma):
         c = np.array(A[training_documents, 2])  # counts of words in document d
         k = sd[d]  # document d is in mixture k
         swk[w-1, k] += c  # number of times w is assigned to component k
-        sk_docs[k] += 1
+        sk_docs[0, k] += 1
 
     sk_words = np.sum(swk, axis=0)  # number of words assigned to mixture k over all docs
 
-    num_iters_gibbs = 10
     # Perform Gibbs sampling through all documents and words
-    for iter in range(num_iters_gibbs):
+    for iter in tqdm(range(T)):
+        sk_docs[iter+1, :] = sk_docs[iter, :]
         for d in range(D):
 
             training_documents = np.where(A[:, 0] == d+1)  # get all occurrences of document d in trh training data
@@ -43,7 +44,7 @@ def BMM(A, B, K, alpha, gamma):
             old_class = sd[d]  # document d is in mixture k
             # remove document from counts
             swk[w-1, old_class] -= c  # decrease number of times w is assigned to component k
-            sk_docs[old_class] -= 1  # remove document d from count of docs
+            sk_docs[iter+1, old_class] -= 1  # remove document d from count of docs
             sk_words[old_class] -= np.sum(c)  # remove word counts from mixture
             # resample class of document
             lb = np.zeros(K)  # log probability of doc d under mixture component k
@@ -51,15 +52,15 @@ def BMM(A, B, K, alpha, gamma):
             for k in range(K):
                 ll = np.dot(np.log(swk[w-1, k] + gamma) - np.log(sk_words[k] + gamma * W), c.T)
 
-                lb[k] = np.log(sk_docs[k] + alpha) + ll
+                lb[k] = np.log(sk_docs[iter+1, k] + alpha) + ll
             b = np.exp(lb - np.max(lb))  # exponentiation of log probability plus constant
             kk = sampleDiscrete(b, np.random.rand())  # sample from (un-normalized) multinomial distribution
             # update counts based on new class assignment
             swk[w-1, kk] += c  # number of times w is assigned to component k
-            sk_docs[kk] += 1
+            sk_docs[iter+1, kk] += 1
             sk_words[kk] += np.sum(c)
             sd[d] = kk
-
+        
     # test documents
     lp = 0
     nd = 0
@@ -68,7 +69,7 @@ def BMM(A, B, K, alpha, gamma):
         test_docs = np.where(B[:, 0] == doc)
         w = B[test_docs, 1]  # unique words in doc d
         c = B[test_docs, 2]  # counts
-        z = np.log(sk_docs + alpha) - np.log(np.sum(sk_docs + alpha))
+        z = np.log(sk_docs[-1, :] + alpha) - np.log(np.sum(sk_docs[-1, :] + alpha))
         for k in range(K):
             b = (swk[:, k] + gamma) / (sk_words[k] + gamma * W)
             z[k] += np.dot(c, np.log(b[w-1]).T)[0]  # probability for doc d
@@ -77,19 +78,19 @@ def BMM(A, B, K, alpha, gamma):
 
     perplexity = np.exp(-lp/nd)  # perplexity
 
-    return perplexity, swk
+    return perplexity, swk, sk_docs
 
 if __name__ == '__main__':
     np.random.seed(1)
     # load data
-    data = sio.loadmat('kos_doc_data.mat')
+    data = sio.loadmat('cw3/data/kos_doc_data.mat')
     A = np.array(data['A'])
     B = data['B']
     V = data['V']
     K = 20  # number of clusters
     alpha = 10  # parameter of the Dirichlet over mixture components
     gamma = .1  # parameter of the Dirichlet over words
-    perplexity, swk = BMM(A, B, K, alpha, gamma)
+    perplexity, swk, _ = BMM(A, B, K, 10, alpha, gamma)
     print(perplexity)
     I = 20
     indices = np.argsort(-swk, axis=0)
