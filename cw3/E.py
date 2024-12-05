@@ -53,10 +53,10 @@ def main(A, B, V):
     beta = (swk+gamma) / np.sum(swk+gamma, axis=1)[:, np.newaxis, :]
     entropy_beta = np.sum(-beta*np.log(beta), axis=1)
     
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(6, 4))
     ax.plot(np.arange(T+1), entropy_beta)
     ax.set_xlabel('Gibbs iteration')
-    ax.set_ylabel('Entropy')
+    ax.set_ylabel('Entropy (nats)')
     ax.grid(True)
     fig.tight_layout()
     fig.savefig(f'cw3/figures/E/entropy.pdf')
